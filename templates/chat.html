@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QuickYelp - Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Business Information:</h1>
+    <p>Name: {{ business_data.name }}</p>
+    <p>History: {{ business_data.history }}</p>
+    <p>Specialties: {{ business_data.specialties }}</p>
+    
+    <h2>Chat:</h2>
+    <div id="chat-log">
+        {% for entry in chat_history %}
+            <p>{{ entry }}</p>
+        {% endfor %}
+    </div>
+    
+    <form id="chat-form">
+        <input type="text" name="query" id="query" required>
+        {% for entry in chat_history %}
+            <input type="hidden" name="chat_history[]" value="{{ 'User: ' }}">
+        {% endfor %}
+        <input type="submit" value="Ask">
+    </form>
+    
+    <!-- Handle asynchronous calls to Flask -->
+    <script>
+        $(document).ready(function() {
+            $("#chat-form").submit(function(event) {
+
+                // Prevent page from reloading and serialize form for AJAX
+                event.preventDefault();
+                var formData = $(this).serialize();
+                
+                // Make request to server and update chat logs
+                $.ajax({
+                    type: "POST",
+                    url: "/",
+                    data: formData,
+                    dataType: "json",
+                    success: function(data) {
+                        // data format:
+                        // {
+                        //     "chat_history": ["...", ...],
+                        //     "chatbot_reply": "..."
+                        // }
+                        var chatHistory = data.chat_history;
+                        var chatbotReply = data.chatbot_reply;
+                        
+                        // Append to chat log
+                        for (var i = 0; i < chatHistory.length; i++) {
+                            $("#chat-log").append("<p>" + chatHistory[i] + "</p>");
+                        }
+                        
+                        // Check if the chatbot reply is not already in the chat log
+                        if (!chatHistory.includes("ChatBot: " + chatbotReply)) {
+                            $("#chat-log").append("<p>ChatBot: " + chatbotReply + "</p>");
+                        }
+                        
+                        // Scroll chat to bottom
+                        var chatLog = document.getElementById("chat-log");
+                        chatLog.scrollTop = chatLog.scrollHeight;
+                        
+                        // Clear the input field
+                        $("#query").val("");
+                    }
+                });
+            });
+        });
+    </script>
+     
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QuickYelp - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="popup" id="popup">
+        <div class="popup-content">
+            <h2>Enter Yelp URL and Number of Pages</h2>
+            <form method="post">
+                <label for="url">Yelp URL:</label>
+                <input type="text" name="url" required><br>
+                <label for="num_pages">Number of review pages (0-8):</label>
+                <input type="number" name="num_pages" min="0" max="8" required><br>
+                <input type="submit" value="Start ChatBot">
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("popup").style.display = "block";
+        });
+    </script>
+</body>
+</html>

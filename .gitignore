@@ -1,0 +1,10 @@
+api_key.py
+Scripts/
+__pycache__/
+.chroma/
+Include/
+Lib/
+NTG_new_data/
+old_data/
+src/
+pyvenv.cfg
