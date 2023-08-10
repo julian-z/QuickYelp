@@ -39,13 +39,17 @@ def index():
         else:
             # This is a question asked in the chat box
             query = request.form.get("query")
-            
-            # Perform interaction with OpenAI and get a chatbot reply
-            chatbot_reply = interact_with_openai(query)
-            
+
+            if len(query) <= 200:
+                # Perform interaction with OpenAI and get a chatbot reply
+                chatbot_reply = interact_with_openai(query)
+            else:
+                # Query is too long
+                chatbot_reply = f"Sorry! Your message ({len(query)} characters) is too long. The maximum is 200 characters."
+
             chat_history = request.form.getlist("chat_history[]")
-            chat_history.append("User: " + query)
-            chat_history.append("ChatBot: " + chatbot_reply)
+            chat_history.append("USR" + query)
+            chat_history.append("BOT" + chatbot_reply)
             
             return jsonify({"chat_history": chat_history, "chatbot_reply": chatbot_reply})
     

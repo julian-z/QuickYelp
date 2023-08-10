@@ -3,74 +3,108 @@
 <head>
     <title>QuickYelp - Chat</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <h1>Business Information:</h1>
-    <p>Name: {{ business_data.name }}</p>
-    <p>History: {{ business_data.history }}</p>
-    <p>Specialties: {{ business_data.specialties }}</p>
+    <div id="react-chat"></div>
     
-    <h2>Chat:</h2>
-    <div id="chat-log">
-        {% for entry in chat_history %}
-            <p>{{ entry }}</p>
-        {% endfor %}
-    </div>
+    <!-- react-chat -->
+    <script type="text/babel">
+        // Inherit React component
+        class ChatApp extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = {
+                    chatHistory: [],
+                    query: "",
+                };
+                this.chatLogRef = React.createRef();
+            }
     
-    <form id="chat-form">
-        <input type="text" name="query" id="query" required>
-        {% for entry in chat_history %}
-            <input type="hidden" name="chat_history[]" value="{{ 'User: ' }}">
-        {% endfor %}
-        <input type="submit" value="Ask">
-    </form>
-    
-    <!-- Handle asynchronous calls to Flask -->
-    <script>
-        $(document).ready(function() {
-            $("#chat-form").submit(function(event) {
-
-                // Prevent page from reloading and serialize form for AJAX
+            // Handle asynchronous calls to Flask
+            handleSubmit = async (event) => {
                 event.preventDefault();
-                var formData = $(this).serialize();
-                
-                // Make request to server and update chat logs
-                $.ajax({
-                    type: "POST",
-                    url: "/",
-                    data: formData,
-                    dataType: "json",
-                    success: function(data) {
-                        // data format:
-                        // {
-                        //     "chat_history": ["...", ...],
-                        //     "chatbot_reply": "..."
-                        // }
-                        var chatHistory = data.chat_history;
-                        var chatbotReply = data.chatbot_reply;
-                        
-                        // Append to chat log
-                        for (var i = 0; i < chatHistory.length; i++) {
-                            $("#chat-log").append("<p>" + chatHistory[i] + "</p>");
-                        }
-                        
-                        // Check if the chatbot reply is not already in the chat log
-                        if (!chatHistory.includes("ChatBot: " + chatbotReply)) {
-                            $("#chat-log").append("<p>ChatBot: " + chatbotReply + "</p>");
-                        }
-                        
-                        // Scroll chat to bottom
-                        var chatLog = document.getElementById("chat-log");
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        
-                        // Clear the input field
-                        $("#query").val("");
+    
+                const formData = new FormData(event.target);
+    
+                try {
+                    const response = await fetch("/", {
+                        method: "POST",
+                        body: formData,
+                    });
+    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const chatHistory = data.chat_history;
+                        const chatbotReply = data.chatbot_reply;
+    
+                        this.setState((prevState) => ({
+                            chatHistory: [...prevState.chatHistory, "USR" + prevState.query, "BOT" + chatbotReply],
+                            query: "",
+                        }), () => {
+                            // Scroll the chat log container to the bottom
+                            this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
+                        });
                     }
-                });
-            });
-        });
+                } catch (error) {
+                    console.error(error);
+                }
+            };
+    
+
+            // Update "query" when user types
+            handleInputChange = (event) => {
+                this.setState({ query: event.target.value });
+            };
+
+
+            // Submit on "enter" button
+            handleTextareaKeyDown = (event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    this.handleSubmit(event);
+                }
+            };
+
+
+            // Render to the DOM
+            render() {
+                return (
+                    <div id="chat-container">
+                        <h1 className="page-title">QuickYelp</h1>
+    
+                        <div id="chat-log-container" ref={this.chatLogRef}>
+                            <div id="chat-log-content">
+                                {this.state.chatHistory.map((entry, index) => (
+                                    <div key={index} className={entry.startsWith("USR") ? "user-message" : "chatbot-message"}>
+                                        {entry.substring(3)}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+    
+                        <form id="chat-form" onSubmit={this.handleSubmit}>
+                            <input
+                                type="text"
+                                name="query"
+                                id="query"
+                                value={this.state.query}
+                                onChange={this.handleInputChange}
+                                autocomplete="off"
+                                required
+                            />
+                            <input type="submit" value="Ask" />
+                        </form>
+                    </div>
+                );
+            }
+        }
+    
+        // Render the ChatApp component
+        ReactDOM.render(<ChatApp />, document.getElementById("react-chat"));
     </script>
-     
 </body>
 </html>
+

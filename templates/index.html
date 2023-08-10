@@ -7,12 +7,12 @@
 <body>
     <div class="popup" id="popup">
         <div class="popup-content">
-            <h2>Enter Yelp URL and Number of Pages</h2>
+            <h2>QuickYelp - AI Yelp Review Scanner</h2>
             <form method="post">
                 <label for="url">Yelp URL:</label>
-                <input type="text" name="url" required><br>
-                <label for="num_pages">Number of review pages (0-8):</label>
-                <input type="number" name="num_pages" min="0" max="8" required><br>
+                <input type="text" name="url" autocomplete="off" required><br>
+                <label for="num_pages">Number of review pages (0-5):</label>
+                <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br>
                 <input type="submit" value="Start ChatBot">
             </form>
         </div>
