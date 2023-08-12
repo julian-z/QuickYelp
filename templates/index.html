@@ -2,12 +2,12 @@
 <html>
 <head>
     <title>QuickYelp - Home</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='outputs.css') }}">
 </head>
 <body>
     <div class="popup" id="popup">
         <div class="popup-content">
-            <h2>QuickYelp - AI Yelp Review Scanner</h2>
+            <h2 style="color: black; font-weight: bold; size:20px; text-align: center; font-size: 2rem;">QuickYelp - AI Yelp Review Scanner</h2>
             <form method="post">
                 <label for="url">Yelp URL:</label>
                 <input type="text" name="url" autocomplete="off" required><br>

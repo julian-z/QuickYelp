@@ -8,3 +8,8 @@ NTG_new_data/
 old_data/
 src/
 pyvenv.cfg
+static/node_modules/
+static/package.json
+static/package-lock.json
+static/old_css/
+static/images/quickyelp_logo.pdn

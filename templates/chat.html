@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>QuickYelp - Chat</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='outputs.css') }}">
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -73,13 +73,15 @@
             render() {
                 return (
                     <div id="chat-container">
-                        <h1 className="page-title">QuickYelp</h1>
+                        <a href="/" className="logo">
+                            <img className="logo" src=".././static/images/quickyelp_logo_white.png" alt="QuickYelp"/>
+                        </a>
     
                         <div id="chat-log-container" ref={this.chatLogRef}>
                             <div id="chat-log-content">
                                 {this.state.chatHistory.map((entry, index) => (
                                     <div key={index} className={entry.startsWith("USR") ? "user-message" : "chatbot-message"}>
-                                        {entry.substring(3)}
+                                        {entry.startsWith("USR") ? "😁 " : "🤖 "} {entry.substring(3)}
                                     </div>
                                 ))}
                             </div>
