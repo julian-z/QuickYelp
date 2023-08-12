@@ -80,8 +80,14 @@
                         <div id="chat-log-container" ref={this.chatLogRef}>
                             <div id="chat-log-content">
                                 {this.state.chatHistory.map((entry, index) => (
-                                    <div key={index} className={entry.startsWith("USR") ? "user-message" : "chatbot-message"}>
-                                        {entry.startsWith("USR") ? "😁 " : "🤖 "} {entry.substring(3)}
+                                    <div key={index} className="message-container">
+                                        <div
+                                            className={`${
+                                                entry.startsWith("USR") ? "user-message" : "chatbot-message"
+                                            } animate-fade-in`}
+                                        >
+                                            {entry.startsWith("USR") ? "😁 " : "🤖 "} {entry.substring(3)}
+                                        </div>
                                     </div>
                                 ))}
                             </div>

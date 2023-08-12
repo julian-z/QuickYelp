@@ -694,7 +694,12 @@ video {
   color: rgb(255 255 255 / var(--tw-text-opacity));
 } */
 
+.message-container {
+  width: 100%;
+}
+
 .user-message {
+  display: inline-block;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   border-radius: 0.375rem;
@@ -706,6 +711,7 @@ video {
 }
 
 .chatbot-message {
+  display: inline-block;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   border-radius: 0.375rem;
@@ -716,6 +722,7 @@ video {
   --tw-text-opacity: 1;
   color: rgb(0 0 0 / var(--tw-text-opacity));
 }
+
 
 input[type="text"],
 input[type="number"] {
@@ -744,5 +751,20 @@ input[type="submit"] {
 input[type="submit"]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(29 78 216 / var(--tw-bg-opacity));
+}
+
+@keyframes fade-in {
+  0% {
+      opacity: 0;
+      transform: translateX(-10px);
+  }
+  100% {
+      opacity: 1;
+      transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
 }
 
