@@ -756,7 +756,7 @@ input[type="submit"]:hover {
 @keyframes fade-in {
   0% {
       opacity: 0;
-      transform: translateX(-10px);
+      transform: translateX(-50px);
   }
   100% {
       opacity: 1;
@@ -768,3 +768,18 @@ input[type="submit"]:hover {
   animation: fade-in 0.3s ease-out;
 }
 
+.loading-animation {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-left: 5px;
+  animation: spin 1s linear infinite;
+  border: 2px solid transparent;
+  border-top-color: #3498db;
+  border-radius: 50%;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
