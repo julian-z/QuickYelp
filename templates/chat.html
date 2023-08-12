@@ -33,7 +33,7 @@
                 try {
                     // Display the user's query in the chat history
                     this.setState((prevState) => ({
-                        chatHistory: [...prevState.chatHistory, "USR" + userQuery],
+                        chatHistory: [...prevState.chatHistory, "USR" + userQuery, "BOTThinking..."],
                         query: "",
                     }));
 
@@ -51,7 +51,7 @@
                         //   than delaying it until we receive OpenAI's response
                         this.setState((prevState) => ({
                             chatHistory: [
-                                ...prevState.chatHistory.slice(0, -1),
+                                ...prevState.chatHistory.slice(0, -2),
                                 "USR" + userQuery,
                                 "BOT" + chatbotReply,
                             ],
@@ -66,7 +66,7 @@
                 }
             };
 
-            
+
             // Update "query" when user types
             handleInputChange = (event) => {
                 this.setState({ query: event.target.value });
