@@ -5,8 +5,22 @@ body {
 .logo {
   width: auto;
   height: 50px;
-  align-self: center;
-  margin: 0.5%
+  align-self: left;
+  margin: 0.5%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: #8b6565;
+  color: white;
+}
+
+.powered-by {
+  font-size: 14px;
+  opacity: 0.7;
+  font-weight: bold;
 }
 
 #chat-container {
@@ -21,17 +35,17 @@ body {
   padding: 1rem;
   margin-bottom: auto;
   background-color: rgba(63, 38, 38, 1);
-  scrollbar-width: thin;
+  scrollbar-width: 5px;
   scrollbar-color: #888 #eee;
 }
 
 #chat-log-container::-webkit-scrollbar {
-  width: 10px;
+  width: 0px;
 }
 
-#chat-log-container::-webkit-scrollbar-thumb {
+/* #chat-log-container::-webkit-scrollbar-thumb {
   background-color: #888;
-  border-radius: 10px;
+  border-radius: 5px;
 }
 
 #chat-log-container::-webkit-scrollbar-thumb:hover {
@@ -40,8 +54,8 @@ body {
 
 #chat-log-container::-webkit-scrollbar-track {
   background-color: #eee;
-  border-radius: 10px;
-}
+  border-radius: 5px;
+} */
 
 #chat-log-content {
   padding-bottom: 10px;

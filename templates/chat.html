@@ -17,7 +17,7 @@
             constructor(props) {
                 super(props);
                 this.state = {
-                    chatHistory: [],
+                    chatHistory: ["BOTWelcome to QuickYelp!"],
                     query: "",
                     waiting: false,
                 };
@@ -92,10 +92,13 @@
             render() {
                 return (
                     <div id="chat-container">
-                        <a href="/" className="logo">
-                            <img className="logo" src=".././static/images/quickyelp_logo_white.png" alt="QuickYelp"/>
-                        </a>
-    
+                        <div className="header">
+                            <a href="/" className="logo">
+                                <img className="logo" src=".././static/images/quickyelp_logo_white.png" alt="QuickYelp"/>
+                            </a>
+                            <p className="powered-by">Powered by OpenAI and Yelp Fusion</p>
+                        </div>
+
                         <div id="chat-log-container" ref={this.chatLogRef}>
                             <div id="chat-log-content">
                                 {this.state.chatHistory.map((entry, index) => (
