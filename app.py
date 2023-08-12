@@ -7,6 +7,8 @@ app = Flask(__name__)
 # Mock function to interact with OpenAI (replace with actual implementation)
 def interact_with_openai(query):
     replies = ["Certainly!", "I'm here to help!", "Ask me anything!"]
+    import time
+    time.sleep(2)
     return random.choice(replies)
 
 

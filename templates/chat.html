@@ -26,22 +26,35 @@
             // Handle asynchronous calls to Flask
             handleSubmit = async (event) => {
                 event.preventDefault();
-    
+
                 const formData = new FormData(event.target);
-    
+                const userQuery = formData.get("query");
+
                 try {
+                    // Display the user's query in the chat history
+                    this.setState((prevState) => ({
+                        chatHistory: [...prevState.chatHistory, "USR" + userQuery],
+                        query: "",
+                    }));
+
                     const response = await fetch("/", {
                         method: "POST",
                         body: formData,
                     });
-    
+
                     if (response.ok) {
                         const data = await response.json();
-                        const chatHistory = data.chat_history;
                         const chatbotReply = data.chatbot_reply;
-    
+
+                        // Replace the user's query with the chatbot's reply
+                        // - This allows the user to see the query that is being processed rather
+                        //   than delaying it until we receive OpenAI's response
                         this.setState((prevState) => ({
-                            chatHistory: [...prevState.chatHistory, "USR" + prevState.query, "BOT" + chatbotReply],
+                            chatHistory: [
+                                ...prevState.chatHistory.slice(0, -1),
+                                "USR" + userQuery,
+                                "BOT" + chatbotReply,
+                            ],
                             query: "",
                         }), () => {
                             // Scroll the chat log container to the bottom
@@ -52,8 +65,8 @@
                     console.error(error);
                 }
             };
-    
 
+            
             // Update "query" when user types
             handleInputChange = (event) => {
                 this.setState({ query: event.target.value });
