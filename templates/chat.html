@@ -35,7 +35,11 @@
                     this.setState((prevState) => ({
                         chatHistory: [...prevState.chatHistory, "USR" + userQuery, "BOTThinking..."],
                         query: "",
-                    }));
+                        waiting: true,
+                    }), () => {
+                            // Scroll the chat log container to the bottom
+                            this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
+                    });
 
                     const response = await fetch("/", {
                         method: "POST",
@@ -56,6 +60,7 @@
                                 "BOT" + chatbotReply,
                             ],
                             query: "",
+                            waiting: false,
                         }), () => {
                             // Scroll the chat log container to the bottom
                             this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
@@ -111,12 +116,14 @@
                                 type="text"
                                 name="query"
                                 id="query"
+                                placeholder="Ask a question..."
                                 value={this.state.query}
                                 onChange={this.handleInputChange}
                                 autocomplete="off"
                                 required
+                                disabled={this.state.waiting}
                             />
-                            <input type="submit" value="Ask" />
+                            <input type="submit" value="Ask" disabled={this.state.waiting}/>
                         </form>
                     </div>
                 );
