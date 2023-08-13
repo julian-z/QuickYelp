@@ -39,6 +39,17 @@ ai_replies = [
     "We encountered an issue with the Yelp URL you provided. Please make sure it's correct and retry.",
     "Hmmm... It appears the Yelp URL you entered is not valid. Kindly check it and try once more."
 ]
+sample_links = [
+    "https://www.yelp.com/biz/nep-cafe-by-kei-concepts-fountain-valley-4",
+    "https://www.yelp.com/biz/baekjeong-irvine-irvine-2",
+    "https://www.yelp.com/biz/cucina-enoteca-irvine-irvine-2",
+    "https://www.yelp.com/biz/omomo-tea-shoppe-irvine",
+    "https://www.yelp.com/biz/eureka-irvine-2",
+    "https://www.yelp.com/biz/curry-house-coco-ichibanya-irvine",
+    "https://www.yelp.com/biz/85-c-bakery-cafe-irvine-irvine",
+    "https://www.yelp.com/biz/pepper-lunch-irvine",
+    "https://www.yelp.com/biz/stacks-pancake-house-irvine-2"
+]
 @app.route("/", methods=["GET", "POST"])
 def index():
     chat_history = []
@@ -52,7 +63,7 @@ def index():
             
             # Re-prompt user if url or num_pages is not valid
             if not validate_url(url):
-                return render_template("index.html", error_message=ai_replies[random.randint(0, 4)])
+                return render_template("index.html", error_message=ai_replies[random.randint(0, len(ai_replies)-1)], sample_link=sample_links[random.randint(0, len(sample_links)-1)])
 
             # Perform data scraping here using the provided URL and num_pages
             else:
@@ -92,7 +103,7 @@ def index():
             
             return jsonify({"chat_history": chat_history, "chatbot_reply": chatbot_reply})
     
-    return render_template("index.html", error_message="")
+    return render_template("index.html", error_message="", sample_link=sample_links[random.randint(0, len(sample_links)-1)])
 
 
 if __name__ == "__main__":

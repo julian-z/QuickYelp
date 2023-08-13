@@ -14,24 +14,35 @@
 
     <div class="popup" id="popup">
         <div class="popup-content">
-            <h2 style="color: black; font-weight: bold; size:20px; text-align: center; font-size: 2rem;">QuickYelp - AI Yelp Review Scanner</h2>
+            <h2 style="color: black; font-weight: bold; text-align: center; font-size: 1.5rem; margin: 0rem 0rem 1rem 0rem;">
+                QuickYelp - AI Yelp Review Scanner
+            </h2>
             <form method="post">
                 <label for="url">Yelp URL:</label>
                 <input type="text" name="url" autocomplete="off" required placeholder="https://www.yelp.com/biz/..."><br>
-                <label for="num_pages">Number of Review Pages (0-5):</label>
+                <label for="num_pages">How Many Pages of Reviews Should I Scan? (0-5):</label>
                 <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br>
-                <input type="submit" value="Start ChatBot">
-            </form>
-            
+                <input type="submit" value="Start Chat">
+            </form>     
+
             {% if error_message != "" %}
-                <br><p class="chatbot-message" style="width: 100%;">
+                <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
                     {{ '🤖 '+error_message }}
                 </p><br>
             {% else %}
-                <br><p class="chatbot-message" style="width: 100%;">
+                <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
                     {{ '🤖 Welcome to QuickYelp! Please provide the necessary information about the business of interest.' }}
                 </p><br>
             {% endif %}
+
+            <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
+                {{ "☝️ No business in mind? Try out this link! "}}
+                <a href="{{ sample_link }}" style="color: rgb(0, 136, 255); font-weight: lighter;">{{sample_link}}</a>
+            </p><br>
+
+            <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
+                {{ "❓ To put it simply, it takes more time to retrieve data from more pages. If you're looking for a quick overview, we recommend putting a lower number of pages!" }}
+            </p><br>
         </div>
     </div>
 
