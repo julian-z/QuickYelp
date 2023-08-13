@@ -127,9 +127,11 @@
                                         <div
                                             className={`${
                                                 entry.startsWith("USR") ? "user-message" : "chatbot-message"
-                                            } animate-fade-in`}
+                                            } ${
+                                                entry.startsWith("USR") ? "animate-fade-in-right" : "animate-fade-in-left"
+                                            }`}
                                         >
-                                            {entry.startsWith("USR") ? "😁 " : "🤖 "}
+                                            {entry.startsWith("BOT") && "🤖 "}
                                             {entry.substring(3) === "LOADING" && (
                                                 <span className="loading-animation"></span>
                                             )}

@@ -22,12 +22,35 @@
                 <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br>
                 <input type="submit" value="Start ChatBot">
             </form>
+            
+            {% if error_message != "" %}
+                <br><p class="chatbot-message" style="width: 100%;">
+                    {{ '🤖 '+error_message }}
+                </p><br>
+            {% else %}
+                <br><p class="chatbot-message" style="width: 100%;">
+                    {{ '🤖 Welcome to QuickYelp! Please provide the necessary information about the business of interest.' }}
+                </p><br>
+            {% endif %}
         </div>
     </div>
-    
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("popup").style.display = "block";
+    
+            document.querySelector("#popup form").addEventListener("submit", function(event) {
+                event.preventDefault();
+
+                const chatbotMessage = document.querySelector(".popup-content .chatbot-message");
+                chatbotMessage.textContent = "🤖 Give me one moment as I learn about this business... ";
+    
+                const loadingAnimation = document.createElement("span");
+                loadingAnimation.className = "loading-animation";
+                chatbotMessage.appendChild(loadingAnimation);
+    
+                event.target.submit();
+            });
         });
     </script>
 
@@ -38,7 +61,8 @@
             constructor(props) {
                 super(props);
                 this.state = {
-                    chatHistory: ["BOTWelcome to QuickYelp! Please provide the necessary information about the business of interest."],
+                    // chatHistory: ["BOTQuickYelp is an AI ChatBot which scans Yelp reviews. Powered by the Yelp Fusion API and OpenAI. Developed by Julian Zulfikar."],
+                    chatHistory: [],
                     query: "",
                     waiting: false,
                     about: false,
