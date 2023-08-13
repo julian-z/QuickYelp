@@ -3,15 +3,22 @@
 <head>
     <title>QuickYelp - Home</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='outputs.css') }}">
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
+    <div id="react-chat"></div>
+    
+    <div class="popup-background" id="popup-background"></div>
+
     <div class="popup" id="popup">
         <div class="popup-content">
             <h2 style="color: black; font-weight: bold; size:20px; text-align: center; font-size: 2rem;">QuickYelp - AI Yelp Review Scanner</h2>
             <form method="post">
                 <label for="url">Yelp URL:</label>
-                <input type="text" name="url" autocomplete="off" required><br>
-                <label for="num_pages">Number of review pages (0-5):</label>
+                <input type="text" name="url" autocomplete="off" required placeholder="https://www.yelp.com/biz/..."><br>
+                <label for="num_pages">Number of Review Pages (0-5):</label>
                 <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br>
                 <input type="submit" value="Start ChatBot">
             </form>
@@ -22,6 +29,161 @@
         document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("popup").style.display = "block";
         });
+    </script>
+
+    <!-- react-chat -->
+    <script type="text/babel">
+        // Inherit React component
+        class ChatApp extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = {
+                    chatHistory: ["BOTWelcome to QuickYelp! Please provide the necessary information about the business of interest."],
+                    query: "",
+                    waiting: false,
+                    about: false,
+                };
+                this.chatLogRef = React.createRef();
+            }
+
+
+            // Toggle the About section
+            toggleAboutSection = () => {
+                this.setState((prevState) => ({
+                    about: !prevState.about,
+                }));
+            };
+    
+
+            // Handle asynchronous calls to Flask
+            handleSubmit = async (event) => {
+                event.preventDefault();
+
+                const formData = new FormData(event.target);
+                const userQuery = formData.get("query");
+
+                try {
+                    // Display the user's query in the chat history
+                    this.setState((prevState) => ({
+                        chatHistory: [...prevState.chatHistory, "USR" + userQuery, "BOTLOADING"],
+                        query: "",
+                        waiting: true,
+                    }), () => {
+                            // Scroll the chat log container to the bottom
+                            this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
+                    });
+
+                    const response = await fetch("/", {
+                        method: "POST",
+                        body: formData,
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const chatbotReply = data.chatbot_reply;
+
+                        // Replace the user's query with the chatbot's reply
+                        // - This allows the user to see the query that is being processed rather
+                        //   than delaying it until we receive OpenAI's response
+                        this.setState((prevState) => ({
+                            chatHistory: [
+                                ...prevState.chatHistory.slice(0, -2),
+                                "USR" + userQuery,
+                                "BOT" + chatbotReply,
+                            ],
+                            query: "",
+                            waiting: false,
+                        }), () => {
+                            // Scroll the chat log container to the bottom
+                            this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
+                        });
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            };
+
+
+            // Update "query" when user types
+            handleInputChange = (event) => {
+                this.setState({ query: event.target.value });
+            };
+
+
+            // Submit on "enter" button
+            handleTextareaKeyDown = (event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    this.handleSubmit(event);
+                }
+            };
+
+
+            // Render to the DOM
+            render() {
+                return (
+                    <div id="chat-container" className={this.state.about ? "small-width" : ""}>
+                        <div className="header">
+                            <a href="/" className="logo">
+                                <img className="logo" src=".././static/images/quickyelp_logo_white.png" alt="QuickYelp"/>
+                            </a>
+
+                            <div className="powered-section">
+                                <p className="powered-by">
+                                    Powered By:&nbsp;
+                                    <a href="https://fusion.yelp.com/"><img className="powered-logos" src=".././static/images/yelp.png" alt="Yelp Fusion"/></a>
+                                    <a href="https://openai.com/blog/openai-api"><img className="powered-logos" src=".././static/images/openai.png" alt="OpenAI"/></a>
+                                </p>
+                                <p className="powered-by">
+                                    GitHub:&nbsp;
+                                    <a href="https://github.com/julian-z/QuickYelp"><img className="powered-logos" src=".././static/images/sm_github.png" alt="Github Repo"/></a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div id="chat-log-container" ref={this.chatLogRef}>
+                            <div id="chat-log-content">
+                                {this.state.chatHistory.map((entry, index) => (
+                                    <div key={index} className="message-container">
+                                        <div
+                                            className={`${
+                                                entry.startsWith("USR") ? "user-message" : "chatbot-message"
+                                            } animate-fade-in`}
+                                        >
+                                            {entry.startsWith("USR") ? "😁 " : "🤖 "}
+                                            {entry.substring(3) === "LOADING" && (
+                                                <span className="loading-animation"></span>
+                                            )}
+                                            {entry.substring(3) !== "LOADING" && entry.substring(3)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        <div className="query-bar">
+                            <form id="chat-form" onSubmit={this.handleSubmit}>
+                                <input
+                                    type="text"
+                                    name="query"
+                                    id="query"
+                                    placeholder="Ask a question..."
+                                    value={this.state.query}
+                                    onChange={this.handleInputChange}
+                                    autocomplete="off"
+                                    required
+                                    disabled={true}
+                                />
+                                <input type="submit" value="Ask" disabled={true}/>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+        }
+    
+        // Render the ChatApp component
+        ReactDOM.render(<ChatApp />, document.getElementById("react-chat"));
     </script>
 </body>
 </html>

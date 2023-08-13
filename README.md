@@ -1,4 +1,4 @@
-# QuickYelp
+![](https://github.com/julian-z/QuickYelp/blob/main/static/images/quickyelp_logo_white_bordered.png)
 Developed by Julian Zulfikar, August 2023
 
 # About

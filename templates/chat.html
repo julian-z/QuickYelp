@@ -17,13 +17,23 @@
             constructor(props) {
                 super(props);
                 this.state = {
-                    chatHistory: ["BOTWelcome to QuickYelp!"],
+                    chatHistory: ["BOTWelcome to QuickYelp! I have successfully scanned through the business you provided. Feel free to ask questions about it!"],
                     query: "",
                     waiting: false,
+                    about: false,
                 };
                 this.chatLogRef = React.createRef();
             }
+
+
+            // Toggle the About section
+            toggleAboutSection = () => {
+                this.setState((prevState) => ({
+                    about: !prevState.about,
+                }));
+            };
     
+
             // Handle asynchronous calls to Flask
             handleSubmit = async (event) => {
                 event.preventDefault();
@@ -91,12 +101,23 @@
             // Render to the DOM
             render() {
                 return (
-                    <div id="chat-container">
+                    <div id="chat-container" className={this.state.about ? "small-width" : ""}>
                         <div className="header">
                             <a href="/" className="logo">
                                 <img className="logo" src=".././static/images/quickyelp_logo_white.png" alt="QuickYelp"/>
                             </a>
-                            <p className="powered-by">Powered by OpenAI and Yelp Fusion</p>
+
+                            <div className="powered-section">
+                                <p className="powered-by">
+                                    Powered By:&nbsp;
+                                    <a href="https://fusion.yelp.com/"><img className="powered-logos" src=".././static/images/yelp.png" alt="Yelp Fusion"/></a>
+                                    <a href="https://openai.com/blog/openai-api"><img className="powered-logos" src=".././static/images/openai.png" alt="OpenAI"/></a>
+                                </p>
+                                <p className="powered-by">
+                                    GitHub:&nbsp;
+                                    <a href="https://github.com/julian-z/QuickYelp"><img className="powered-logos" src=".././static/images/sm_github.png" alt="Github Repo"/></a>
+                                </p>
+                            </div>
                         </div>
 
                         <div id="chat-log-container" ref={this.chatLogRef}>
@@ -118,21 +139,23 @@
                                 ))}
                             </div>
                         </div>
-    
-                        <form id="chat-form" onSubmit={this.handleSubmit}>
-                            <input
-                                type="text"
-                                name="query"
-                                id="query"
-                                placeholder="Ask a question..."
-                                value={this.state.query}
-                                onChange={this.handleInputChange}
-                                autocomplete="off"
-                                required
-                                disabled={this.state.waiting}
-                            />
-                            <input type="submit" value="Ask" disabled={this.state.waiting}/>
-                        </form>
+                        
+                        <div className="query-bar">
+                            <form id="chat-form" onSubmit={this.handleSubmit}>
+                                <input
+                                    type="text"
+                                    name="query"
+                                    id="query"
+                                    placeholder="Ask a question..."
+                                    value={this.state.query}
+                                    onChange={this.handleInputChange}
+                                    autocomplete="off"
+                                    required
+                                    disabled={this.state.waiting}
+                                />
+                                <input type="submit" value="Ask" disabled={this.state.waiting}/>
+                            </form>
+                        </div>
                     </div>
                 );
             }
