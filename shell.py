@@ -13,12 +13,12 @@ import re
 from random import randint
 
 import os
-from api_key import API_KEY
+from api_key import OPENAI_KEY, YELP_FUSION_KEY
 from langchain.document_loaders import TextLoader
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.chat_models import ChatOpenAI
 
-os.environ["OPENAI_API_KEY"] = API_KEY
+os.environ["OPENAI_API_KEY"] = OPENAI_KEY
 
 
 def clean(input_string):
@@ -51,7 +51,10 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
         "name": None, 
         "history": None,
         "specialties": None,
-        "reviews": defaultdict(list)
+        "location": None,
+        "reviews": defaultdict(list),
+        "yelp_fusion_api_business_match": None,
+        "yelp_fusion_api_business_details": None
     }
 
     # Scrape reviews and retrieve business information
@@ -65,11 +68,15 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
             response = requests.get(url)
 
             if response.status_code == 200:
-
                 # Get source code
                 source_code = unidecode(response.text)
                 with open("source_code.txt", 'w') as f:
                     f.write(source_code)
+
+                # DEBUGGING PURPOSES: Use static source_code
+                # source_code = ""
+                # with open("source_code.txt", 'r') as f:
+                #     source_code = f.read()
                 
                 # Try to extract JSON object
                 start = source_code.index('<!--{"locale"')
@@ -85,7 +92,7 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
                     print("ERROR EXTRACTING JSON:", e)
                     raise e
 
-                # Try to extract business name, history, and specialties (if necessary)
+                # Try to extract business information
                 if not business_data["name"]:
                     name = None
                     try:
@@ -109,6 +116,24 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
                     except Exception as e:
                         print("ERROR GETTING SPECIALTIES:", e)
                     business_data["specialties"] = specialties
+                
+                if not business_data["location"]:
+                    location = None
+                    try:
+                        start = source_code.index("streetAddress")
+                        end = source_code.index("}", start)
+                        location = '{"'+source_code[start:end+1]
+
+                        try:
+                            location_as_dict = eval(location)
+                            location = location_as_dict
+                        except Exception as e:
+                            print("ERROR CONVERTING LOCATION TO DICT", e, location)
+                            business_data["location"] = location
+
+                    except Exception as e:
+                        print("ERROR GETTING LOCATION:", e)
+                    business_data["location"] = location
 
                 # Try to extract reviews
                 try:
@@ -136,6 +161,38 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
         except Exception as e:
             print("ERROR:", e)
             raise e
+
+    # Try to call to Yelp Fusion API: Business Match
+    # https://docs.developer.yelp.com/reference/v3_business_match
+    if business_data["name"] and type(business_data["location"]) == dict:
+        try:
+            yf_url = f"https://api.yelp.com/v3/businesses/matches?name={business_data['name']}&address1={business_data['location']['streetAddress']}" + \
+            f"&city={business_data['location']['addressLocality']}&state={business_data['location']['addressRegion']}&country={business_data['location']['addressCountry']}" + \
+            f"&limit=1&match_threshold=default"
+            api_call = requests.get(yf_url, headers={"Authorization": "Bearer "+YELP_FUSION_KEY})
+
+            if api_call.status_code == 200:
+                business_data["yelp_fusion_api_business_match"] = api_call.json()
+            else:
+                print("API (1) STATUS CODE", api_call.status_code)
+        except Exception as e:
+            print("ERROR CALLING FUSION (1):", e)
+    else:
+        print("NO FUSION CALL:", business_data["name"], business_data["location"])
+    
+    # Try to call Yelp Fusion API: Business Details
+    # https://docs.developer.yelp.com/reference/v3_business_info
+    if business_data["yelp_fusion_api_business_match"]:
+        try:
+            yf_url = f"https://api.yelp.com/v3/businesses/{business_data['yelp_fusion_api_business_match']['businesses'][0]['id']}"
+            api_call = requests.get(yf_url, headers={"Authorization": "Bearer "+YELP_FUSION_KEY})
+
+            if api_call.status_code == 200:
+                business_data["yelp_fusion_api_business_details"] = api_call.json()
+            else:
+                print("API (2) STATUS CODE", api_call.status_code)
+        except Exception as e:
+            print("ERROR CALLING FUSION (2):", e)
 
     # Dump business_data JSON object
     with open("business_data.txt", 'w') as f:
@@ -213,14 +270,18 @@ if __name__ == "__main__":
     print("Done scraping!")
     print('-'*100)
     
-    # Open business_data.txt instead
+    # DEBUGGING PURPOSES: Open business_data.txt instead
     # with open("business_data.txt", 'r') as f:
     #     business_data = json.loads(f.read())
 
     print("Business Information:")
     print("Name:", business_data["name"])
+    print('~ '*50)
     print("History:", business_data["history"])
+    print('~ '*50)
     print("Specialties:", business_data["specialties"])
+    print('~ '*50)
+    print("Location:", business_data["location"])
     print('-' * 100)
     for stars, comments in sorted(business_data["reviews"].items()):
         print("RATING:", stars)
@@ -229,14 +290,14 @@ if __name__ == "__main__":
         print('-' * 100)
 
     # Feed to OpenAI
-    # loader = TextLoader("business_data.txt")
-    # index = VectorstoreIndexCreator().from_loaders([loader])
+    loader = TextLoader("business_data.txt")
+    index = VectorstoreIndexCreator().from_loaders([loader])
 
     # Initiate ChatBot
-    # while True:
-    #     query = input("Ask a question about the business (Q to quit): ")
-    #     if query == 'Q': break
-    #     res = index.query(query, llm=ChatOpenAI())
-    #     print(res)
-    #     print('-'*100)
+    while True:
+        query = input("Ask a question about the business (Q to quit): ")
+        if query == 'Q': break
+        res = index.query(query, llm=ChatOpenAI())
+        print(res)
+        print('-'*100)
     

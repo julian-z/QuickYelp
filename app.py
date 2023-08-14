@@ -12,7 +12,7 @@ import re
 from random import randint
 
 import os
-from api_key import API_KEY
+from api_key import OPENAI_KEY, YELP_FUSION_KEY
 from langchain.document_loaders import TextLoader
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.chat_models import ChatOpenAI
@@ -20,7 +20,7 @@ from langchain.chat_models import ChatOpenAI
 from shell import validate_url
 
 
-os.environ["OPENAI_API_KEY"] = API_KEY
+os.environ["OPENAI_API_KEY"] = OPENAI_KEY
 app = Flask(__name__)
 
 
@@ -68,7 +68,7 @@ def index():
             # Perform data scraping here using the provided URL and num_pages
             else:
                 import time
-                time.sleep(5)
+                time.sleep(num_pages)
                 
                 pass
                 

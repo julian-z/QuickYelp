@@ -13,3 +13,7 @@ static/package.json
 static/package-lock.json
 static/old_css/
 static/images/quickyelp_logo.pdn
+business_data.txt
+json_obj.txt
+source_code.txt
+share/
