@@ -32,6 +32,23 @@ def clean(input_string):
     return cleaned_string
 
 
+def convert_yelp_dollar_signs(rating: str) -> str:
+    """
+    Translate Yelp price range from dollar signs.
+    """
+    if len(rating) == 1:
+        return "Under 10 dollars"
+    elif len(rating) == 2:
+        return "Between 11 to 30 dollars"
+    elif len(rating) == 3:
+        return "Between 31 to 60 dollars"
+    elif len(rating) == 4:
+        return "Above 61 dollars"
+    else:
+        return "No price range provided"
+
+
+
 def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
     """
     Scrapes the first "num_pages" review pages of a Yelp URL and stores into a JSON object.
@@ -52,9 +69,14 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
         "history": None,
         "specialties": None,
         "location": None,
-        "reviews": defaultdict(list),
-        "yelp_fusion_api_business_match": None,
-        "yelp_fusion_api_business_details": None
+        "phone": None,
+        "categories": None,
+        "overall_rating": None,
+        "price_range": None,
+        "hours": None,
+        "is_open_now": None,
+        "transactions": None,
+        "reviews": defaultdict(list)
     }
 
     # Scrape reviews and retrieve business information
@@ -70,8 +92,8 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
             if response.status_code == 200:
                 # Get source code
                 source_code = unidecode(response.text)
-                with open("source_code.txt", 'w') as f:
-                    f.write(source_code)
+                # with open("source_code.txt", 'w') as f:
+                #     f.write(source_code)
 
                 # DEBUGGING PURPOSES: Use static source_code
                 # source_code = ""
@@ -82,8 +104,8 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
                 start = source_code.index('<!--{"locale"')
                 end = source_code.index('}}-->', start)
                 yelp_json_str = unidecode(source_code[start+4:end]+'}}')
-                with open("json_obj.txt", 'w') as f:
-                    f.write(yelp_json_str)
+                # with open("json_obj.txt", 'w') as f:
+                #     f.write(yelp_json_str)
 
                 yelp_json = None
                 try:
@@ -162,8 +184,23 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
             print("ERROR:", e)
             raise e
 
+    print("CALLING YELP FUSION API TO FIND BUSINESS")
     # Try to call to Yelp Fusion API: Business Match
     # https://docs.developer.yelp.com/reference/v3_business_match
+    yelp_fusion_api_business_match = None
+
+    # If the name was not provided by the business, use the URL to do a Business Match
+    if not business_data["name"]:
+        cur = base_url.index("/biz/")+5
+        business_data["name"] = ""
+        while cur < len(base_url):
+            if base_url[cur] not in {'/', '?'}:
+                business_data["name"] += base_url[cur]
+                cur += 1
+            else:
+                break
+
+    # Perform Business Match using location
     if business_data["name"] and type(business_data["location"]) == dict:
         try:
             yf_url = f"https://api.yelp.com/v3/businesses/matches?name={business_data['name']}&address1={business_data['location']['streetAddress']}" + \
@@ -172,27 +209,48 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
             api_call = requests.get(yf_url, headers={"Authorization": "Bearer "+YELP_FUSION_KEY})
 
             if api_call.status_code == 200:
-                business_data["yelp_fusion_api_business_match"] = api_call.json()
+                yelp_fusion_api_business_match = api_call.json()
             else:
                 print("API (1) STATUS CODE", api_call.status_code)
         except Exception as e:
             print("ERROR CALLING FUSION (1):", e)
     else:
         print("NO FUSION CALL:", business_data["name"], business_data["location"])
-    
+
+    print("CALLING YELP FUSION API FOR BUSINESS DETAILS")
     # Try to call Yelp Fusion API: Business Details
     # https://docs.developer.yelp.com/reference/v3_business_info
-    if business_data["yelp_fusion_api_business_match"]:
+    yelp_fusion_api_business_details = None
+    if yelp_fusion_api_business_match:
         try:
-            yf_url = f"https://api.yelp.com/v3/businesses/{business_data['yelp_fusion_api_business_match']['businesses'][0]['id']}"
+            yf_url = f"https://api.yelp.com/v3/businesses/{yelp_fusion_api_business_match['businesses'][0]['id']}"
             api_call = requests.get(yf_url, headers={"Authorization": "Bearer "+YELP_FUSION_KEY})
 
             if api_call.status_code == 200:
-                business_data["yelp_fusion_api_business_details"] = api_call.json()
+                yelp_fusion_api_business_details = api_call.json()
             else:
                 print("API (2) STATUS CODE", api_call.status_code)
         except Exception as e:
             print("ERROR CALLING FUSION (2):", e)
+
+    # Store API data into business_details
+    if yelp_fusion_api_business_details:
+        try: business_data["name"] = yelp_fusion_api_business_details["name"]
+        except Exception as e: print("ERROR GETTING NAME FROM API", e)
+        try: business_data["phone"] = yelp_fusion_api_business_details["display_phone"]
+        except Exception as e: print("ERROR GETTING PHONE FROM API", e)
+        try: business_data["categories"] = [data["title"] for data in yelp_fusion_api_business_details["categories"]]
+        except Exception as e: print("ERROR GETTING CATEGORIES FROM API", e)
+        try: business_data["overall_rating"] = yelp_fusion_api_business_details["rating"]
+        except Exception as e: print("ERROR GETTING RATING FROM API", e)
+        try: business_data["price_range"] = convert_yelp_dollar_signs(yelp_fusion_api_business_details["price"])
+        except Exception as e: print("ERROR GETTING PRICING FROM API", e)
+        try: business_data["hours"] = yelp_fusion_api_business_details["hours"]
+        except Exception as e: print("ERROR GETTING HOURS FROM API", e)
+        try: business_data["is_open_now"] = yelp_fusion_api_business_details["hours"][0]["is_open_now"]
+        except Exception as e: print("ERROR GETTING OPEN STATUS FROM API", e)
+        try: business_data["transactions"] = yelp_fusion_api_business_details["transactions"]
+        except Exception as e: print("ERROR GETTING TRANSACTIONS FROM API", e)
 
     # Dump business_data JSON object
     with open("business_data.txt", 'w') as f:
@@ -209,9 +267,9 @@ def validate_url(url):
 
 
 if __name__ == "__main__":
+    # base_url = 'https://www.yelp.com/biz/nick-the-greek-elk-grove-elk-grove'
     # base_url = 'https://www.yelp.com/biz/wingstop-opening-soon-sacramento'
     # base_url = 'https://www.yelp.com/biz/kikis-chicken-place-sacramento-15?page_src=related_bizes'
-    # base_url = 'https://www.yelp.com/biz/nick-the-greek-elk-grove-elk-grove'
 
     print('-'*100)
     print("QuickYelp - AI Yelp Review ChatBot")

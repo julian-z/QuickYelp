@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-import random  # For random replies
+import random
 
 import requests
 from collections import defaultdict
