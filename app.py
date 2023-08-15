@@ -20,7 +20,7 @@ app = Flask(__name__)
 
 LOADER = None
 INDEX = None
-DEBUGGING = False
+DEBUGGING = True
 
 
 def mock_query() -> str:
@@ -102,16 +102,24 @@ def index():
                     temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
                     with temp_file as f:
                         json.dump(business_data, f)
+                    
+                    # DEBUGGING PURPOSES: See what data the chatbot is trained on
+                    # with open(temp_file.name, 'r') as temp_file_read:
+                    #     content = temp_file_read.read()
+                    #     with open("data.txt", 'w') as f:
+                    #         f.write(content)
+
                     temp_file_path = temp_file.name
                     LOADER = TextLoader(temp_file_path)
                     INDEX = VectorstoreIndexCreator().from_loaders([LOADER])
                     os.remove(temp_file_path)
                 else:
+                    print("MOCKING SCRAPING")
                     import time
                     time.sleep(num_pages)
                     LOADER = "Mock Loader"
                     INDEX = "Mock Index"
-                    print("SCRAPING")
+                    print("MOCK SCRAPE DONE")
                     business_data = {
                         "name": random.choice(["Restaurant", None]), 
                         "history": random.choice(["History", None]),
