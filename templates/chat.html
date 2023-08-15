@@ -9,15 +9,14 @@
 </head>
 <body>
     <div id="react-chat"></div>
-    
-    <!-- react-chat -->
+
     <script type="text/babel">
         // Inherit React component
         class ChatApp extends React.Component {
             constructor(props) {
                 super(props);
                 this.state = {
-                    chatHistory: ["BOTWelcome to QuickYelp! I have successfully scanned through the business you provided. Feel free to ask questions about it!"],
+                    chatHistory: ["BOT👋 Welcome to QuickYelp! I have scanned through the business you provided. Feel free to ask questions about it!", "BOT{{ initial_response }}"],
                     query: "",
                     waiting: false,
                     about: false,
@@ -26,7 +25,7 @@
             }
 
 
-            // Toggle the About section
+            // Toggle the About section (TO-DO)
             toggleAboutSection = () => {
                 this.setState((prevState) => ({
                     about: !prevState.about,

@@ -49,7 +49,7 @@ def convert_yelp_dollar_signs(rating: str) -> str:
 
 
 
-def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
+def scrape_yelp_page(base_url: str, num_pages: int, web_app: bool = False):
     """
     Scrapes the first "num_pages" review pages of a Yelp URL and stores into a JSON object.
         Resulting JSON object is written into business_data.txt
@@ -92,8 +92,9 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
             if response.status_code == 200:
                 # Get source code
                 source_code = unidecode(response.text)
-                # with open("source_code.txt", 'w') as f:
-                #     f.write(source_code)
+                if not web_app:
+                    with open("source_code.txt", 'w') as f:
+                        f.write(source_code)
 
                 # DEBUGGING PURPOSES: Use static source_code
                 # source_code = ""
@@ -104,8 +105,9 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
                 start = source_code.index('<!--{"locale"')
                 end = source_code.index('}}-->', start)
                 yelp_json_str = unidecode(source_code[start+4:end]+'}}')
-                # with open("json_obj.txt", 'w') as f:
-                #     f.write(yelp_json_str)
+                if not web_app:
+                    with open("json_obj.txt", 'w') as f:
+                        f.write(yelp_json_str)
 
                 yelp_json = None
                 try:
@@ -253,11 +255,11 @@ def scrape_yelp_page(base_url: str, num_pages: int) -> dict:
         except Exception as e: print("ERROR GETTING TRANSACTIONS FROM API", e)
 
     # Dump business_data JSON object
-    with open("business_data.txt", 'w') as f:
-        json.dump(business_data, f)
+    if not web_app:
+        with open("business_data.txt", 'w') as f:
+            json.dump(business_data, f)
     
     return business_data
-
 
 def validate_url(url):
     """
@@ -328,7 +330,7 @@ if __name__ == "__main__":
     print("Done scraping!")
     print('-'*100)
     
-    # DEBUGGING PURPOSES: Open business_data.txt instead
+    # DEBUGGING PURPOSES: Load business_data.txt
     # with open("business_data.txt", 'r') as f:
     #     business_data = json.loads(f.read())
 
