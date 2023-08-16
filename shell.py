@@ -37,16 +37,15 @@ def convert_yelp_dollar_signs(rating: str) -> str:
     Translate Yelp price range from dollar signs.
     """
     if len(rating) == 1:
-        return "Under 10 dollars"
+        return "Under 10 dollars. Yelp rates this price range as 1 dollar sign out of 4."
     elif len(rating) == 2:
-        return "Between 11 to 30 dollars"
+        return "Between 11 to 30 dollars. Yelp rates this price range as 2 dollar signs out of 4."
     elif len(rating) == 3:
-        return "Between 31 to 60 dollars"
+        return "Between 31 to 60 dollars. Yelp rates this price range as 3 dollar signs out of 4."
     elif len(rating) == 4:
-        return "Above 61 dollars"
+        return "Above 61 dollars. Yelp rates this price range as 4 dollar signs, the priciest it can be."
     else:
         return "No price range provided"
-
 
 
 def scrape_yelp_page(base_url: str, num_pages: int, web_app: bool = False):
@@ -262,23 +261,38 @@ def scrape_yelp_page(base_url: str, num_pages: int, web_app: bool = False):
     return business_data
 
 
-def format_business_data(business_data: dict, web_app: bool = False):
+def format_business_data(business_data: dict, web_app: bool = False) -> str:
     """
     Formats business_data into a readable text file for training LangChain/ChatGPT.
     """
     # Provide context for chatbot
     res = "You are QuickYelp, a chatbot which is able to answer questions about a given Yelp business. "+ \
         "The following content provided is the background context of the restaurant, followed by the reviews. "+ \
-        "Beware: some content is formatted in Python data structures (lists, dicts, etc). | "
-    max_len = len(res)
+        "If the answer to their query is not provided within the background context, you may look through the reviews to see if any of them give an answer. " + \
+        "If you still do not find the answer, notify them that the information was not provided by the business itself. " + \
+        "Please be concise as the point of this chatbot is to get quick AND descriptive information about businesses! " + \
+        "Beware: some content is formatted in Python data structures (lists, dicts, etc).\n\n"
 
-    # Format business_data sections
     sections = ["name", "history", "specialties", "location", "phone", "categories",
                 "overall_rating", "price_range" , "hours", "transactions"]
     special = {"specialties", "categories", "hours", "transactions"}
+
+    background_context = "You are provided the following background context:\n"
+    for section in sections:
+        if business_data[section]:
+            background_context += f"- {section}\n"
+    res += background_context+'\n'
+
+    res += "######################## BACKGROUND CONTEXT STARTING ########################\n\n"
+
+    # Format business_data sections
     for section in sections:
         if section in special:
             content = f"The {section} are"
+        elif section == "price_range":
+            content = "The price range in dollars/Yelp dollar signs of their items/menu is"
+        elif section == "overall_rating":
+            content = "The overall rating of the business calculated by Yelp reviews is"
         else:
             content = f"The {section} is"
 
@@ -294,16 +308,15 @@ def format_business_data(business_data: dict, web_app: bool = False):
         else:
             content += f" not provided by the business. If the user prompts for this data, alert them to report this error to jzulfika@uci.edu if the issue persists."
         
-        res += content+"\n"
-        max_len = max(max_len, len(content))
+        res += content+"\n\n"
     
     # Format reviews
-    res += "The reviews will now be provided. They will be presented in the format of a Python list. Think of ratings from 3-5 stars as positive, and 1-2 stars as negative.\n"
+    res += "######################## BACKGROUND CONTEXT DONE -- MOVING TO REVIEWS ########################\n\n"
+    res += "The reviews will now be provided. They will be presented in the format of a Python list. Think of ratings from 3-5 stars as positive, and 1-2 stars as negative.\n\n"
     if len(business_data["reviews"]):
         for rating in business_data["reviews"].keys():
-            content = f"Here are the reviews which rated the business {rating} stars: {business_data['reviews'][rating]}\n"
+            content = f"Here are the reviews which rated the business {rating} stars: {business_data['reviews'][rating]}\n\n"
             res += content
-            max_len = max(max_len, len(content))
     else:
         res += "The reviews are not provided at all. This means the user either chose to scrape 0 pages OR there is a vital issue with the program. " + \
             "Notify the user that they should report this error to jzulfika@uci.edu if they did not select 0 pages, as this is a MAJOR error!"
@@ -318,17 +331,22 @@ def format_business_data(business_data: dict, web_app: bool = False):
 
 def validate_url(url):
     """
-    Helper function to validate Yelp URL.
+    Helper function to validate Yelp URL. Accepts mobile, yelp.to, and desktop links.
     """
-    return re.match(r'^https?://(?:[wm]\.)?yelp\.com/biz/[\w-]+(?:-\w+)?(?:\?[\w=&-]*)?$', url) or \
-        re.match(r'^https:\/\/yelp\.to\/[a-zA-Z0-9]+$|^http:\/\/yelp\.to\/[a-zA-Z0-9]+$', url)
+    return re.match(r'^https?://(?:www\.)?yelp\.com/biz/[\w-]+(?:-\w+)?(?:\?[\w=&-]*)?$', url) or \
+        re.match(r'^https://m\.yelp\.com/biz/[\w-]+(?:-\w+)?(?:\?.*)?$', url) or \
+        re.match(r'^https://yelp\.to/[a-zA-Z0-9]+$', url)
 
 
 if __name__ == "__main__":
-    # base_url = 'https://www.yelp.com/biz/nick-the-greek-elk-grove-elk-grove'
-    # base_url = 'https://www.yelp.com/biz/wingstop-opening-soon-sacramento'
-    # base_url = 'https://www.yelp.com/biz/kikis-chicken-place-sacramento-15?page_src=related_bizes'
-
+    """
+    DEBUGGING PURPOSES: Test links
+    https://www.yelp.com/biz/nick-the-greek-elk-grove-elk-grove
+    https://www.yelp.com/biz/wingstop-opening-soon-sacramento
+    https://www.yelp.com/biz/kikis-chicken-place-sacramento-15?page_src=related_bizes
+    https://m.yelp.com/biz/world-wrapps-san-ramon?primary_source=biz_details&secondary_source=nav_bar&share_id=4C78CAD6-084F-41A2-A4CE-D42CCE3A0133&uid=q-o2wstFFth7bN91gMDSkA&utm_source=ishare
+    https://yelp.to/gMUOLofNOg
+    """
     print('-'*100)
     print("QuickYelp - AI Yelp Review ChatBot")
     print("Developed by Julian Zulfikar, 2023\n")
