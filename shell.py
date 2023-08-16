@@ -265,7 +265,7 @@ def validate_url(url):
     """
     Helper function to validate Yelp URL.
     """
-    return re.match(r'^https?://(?:www\.)?yelp\.com/biz/[\w-]+(?:-\w+)?(?:\?[\w=&-]*)?$', url)
+    return re.match(r'^https?://(?:[wm]\.)?yelp\.com/biz/[\w-]+(?:-\w+)?(?:\?[\w=&-]*)?$', url) or re.match(r'^https:\/\/yelp\.to\/[a-zA-Z0-9]+$|^http:\/\/yelp\.to\/[a-zA-Z0-9]+$', url)
 
 
 if __name__ == "__main__":
@@ -360,4 +360,4 @@ if __name__ == "__main__":
         res = index.query(query, llm=ChatOpenAI())
         print(res)
         print('-'*100)
-    
+
