@@ -13,14 +13,14 @@ from langchain.document_loaders import TextLoader
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.chat_models import ChatOpenAI
 
-from shell import validate_url, scrape_yelp_page
+from shell import validate_url, scrape_yelp_page, format_business_data
 
 os.environ["OPENAI_API_KEY"] = OPENAI_KEY
 app = Flask(__name__)
 
 LOADER = None
 INDEX = None
-DEBUGGING = True
+DEBUGGING = False
 
 
 def mock_query() -> str:
@@ -99,14 +99,15 @@ def index():
             else:
                 if not DEBUGGING:             
                     business_data = scrape_yelp_page(url, num_pages, web_app=True)
+                    training_data = format_business_data(business_data, web_app=True)
                     temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
                     with temp_file as f:
-                        json.dump(business_data, f)
+                        json.dump(training_data, f)
                     
                     # DEBUGGING PURPOSES: See what data the chatbot is trained on
                     # with open(temp_file.name, 'r') as temp_file_read:
                     #     content = temp_file_read.read()
-                    #     with open("data.txt", 'w') as f:
+                    #     with open("webapp_data.txt", 'w') as f:
                     #         f.write(content)
 
                     temp_file_path = temp_file.name

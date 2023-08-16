@@ -261,11 +261,67 @@ def scrape_yelp_page(base_url: str, num_pages: int, web_app: bool = False):
     
     return business_data
 
+
+def format_business_data(business_data: dict, web_app: bool = False):
+    """
+    Formats business_data into a readable text file for training LangChain/ChatGPT.
+    """
+    # Provide context for chatbot
+    res = "You are QuickYelp, a chatbot which is able to answer questions about a given Yelp business. "+ \
+        "The following content provided is the background context of the restaurant, followed by the reviews. "+ \
+        "Beware: some content is formatted in Python data structures (lists, dicts, etc). | "
+    max_len = len(res)
+
+    # Format business_data sections
+    sections = ["name", "history", "specialties", "location", "phone", "categories",
+                "overall_rating", "price_range" , "hours", "transactions"]
+    special = {"specialties", "categories", "hours", "transactions"}
+    for section in sections:
+        if section in special:
+            content = f"The {section} are"
+        else:
+            content = f"The {section} is"
+
+        if business_data[section]:
+            content += f": {business_data[section]}"
+
+            if section == "hours":
+                content += ", and the business is "
+                if business_data["is_open_now"]:
+                    content += "open right now."
+                else:
+                    content += "not open right now."
+        else:
+            content += f" not provided by the business. If the user prompts for this data, alert them to report this error to jzulfika@uci.edu if the issue persists."
+        
+        res += content+"\n"
+        max_len = max(max_len, len(content))
+    
+    # Format reviews
+    res += "The reviews will now be provided. They will be presented in the format of a Python list. Think of ratings from 3-5 stars as positive, and 1-2 stars as negative.\n"
+    if len(business_data["reviews"]):
+        for rating in business_data["reviews"].keys():
+            content = f"Here are the reviews which rated the business {rating} stars: {business_data['reviews'][rating]}\n"
+            res += content
+            max_len = max(max_len, len(content))
+    else:
+        res += "The reviews are not provided at all. This means the user either chose to scrape 0 pages OR there is a vital issue with the program. " + \
+            "Notify the user that they should report this error to jzulfika@uci.edu if they did not select 0 pages, as this is a MAJOR error!"
+
+    # Write into file
+    if not web_app:
+        with open("formatted_data.txt", 'w') as f:
+            f.write(res)
+    else:
+        return res
+
+
 def validate_url(url):
     """
     Helper function to validate Yelp URL.
     """
-    return re.match(r'^https?://(?:[wm]\.)?yelp\.com/biz/[\w-]+(?:-\w+)?(?:\?[\w=&-]*)?$', url) or re.match(r'^https:\/\/yelp\.to\/[a-zA-Z0-9]+$|^http:\/\/yelp\.to\/[a-zA-Z0-9]+$', url)
+    return re.match(r'^https?://(?:[wm]\.)?yelp\.com/biz/[\w-]+(?:-\w+)?(?:\?[\w=&-]*)?$', url) or \
+        re.match(r'^https:\/\/yelp\.to\/[a-zA-Z0-9]+$|^http:\/\/yelp\.to\/[a-zA-Z0-9]+$', url)
 
 
 if __name__ == "__main__":
@@ -348,9 +404,14 @@ if __name__ == "__main__":
         for i, c in enumerate(comments):
             print(f"{i+1}:", c)
         print('-' * 100)
-
-    # Feed to OpenAI
-    loader = TextLoader("business_data.txt")
+    
+    # Format business_data
+    format_business_data(business_data)
+    with open("formatted_data.txt", 'r') as f:
+        formatted_content = f.read()
+    
+    # LangChain initiation using TextLoader and VectorstoreIndexCreator
+    loader = TextLoader("formatted_data.txt")
     index = VectorstoreIndexCreator().from_loaders([loader])
 
     # Initiate ChatBot
