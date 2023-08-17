@@ -56,11 +56,20 @@
                 event.preventDefault();
 
                 const chatbotMessage = document.querySelector(".popup-content .chatbot-message");
-                chatbotMessage.textContent = "🤖 Give me one moment as I learn about this business... ";
-    
+                chatbotMessage.textContent = `🤖 Verifying Yelp URL...`;
+
                 const loadingAnimation = document.createElement("span");
                 loadingAnimation.className = "loading-animation";
                 chatbotMessage.appendChild(loadingAnimation);
+
+                const num_pages = parseInt(document.querySelector("input[name='num_pages']").value);
+                const estimatedTime = Math.ceil(num_pages * 6.5);
+                let elapsedSeconds = 0;
+                const elapsedTimeInterval = setInterval(() => {
+                    elapsedSeconds++;
+                    chatbotMessage.textContent = `🤖 Give me one moment as I learn about this business... Estimated time: ${estimatedTime} seconds. Elapsed time: ${elapsedSeconds} seconds. `;
+                    chatbotMessage.appendChild(loadingAnimation);
+                }, 1000);
     
                 event.target.submit();
             });
