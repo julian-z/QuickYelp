@@ -20,7 +20,7 @@ app = Flask(__name__)
 
 LOADER = None
 INDEX = None
-DEBUGGING = True # Avoid utilizing Yelp Fusion and OpenAI
+DEBUGGING = False # Avoid utilizing Yelp Fusion and OpenAI
 
 
 def craft_initial_response(business_data: dict) -> str:
@@ -105,7 +105,9 @@ def index():
                 else:
                     print("MOCKING SCRAPING")
                     import time
-                    time.sleep(num_pages)
+                    for i in range(num_pages):
+                        print("SCRAPING PAGE", i+1)
+                        time.sleep(6.5)
                     LOADER = "Mock Loader"
                     INDEX = "Mock Index"
                     print("MOCK SCRAPE DONE")

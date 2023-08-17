@@ -72,6 +72,12 @@
                     chatbotMessage.appendChild(loadingAnimation);
                 }, 1000);
     
+                // Disable submit button
+                const form = document.querySelector("#popup form");
+                const submitButton = form.querySelector("input[type='submit']");
+                form.setAttribute("disabled", true);
+                submitButton.setAttribute("disabled", true);
+
                 event.target.submit();
             });
         });
