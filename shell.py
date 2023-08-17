@@ -266,11 +266,11 @@ def format_business_data(business_data: dict, web_app: bool = False) -> str:
     Formats business_data into a readable text file for training LangChain/ChatGPT.
     """
     # Provide context for chatbot
-    res = "You are QuickYelp, a chatbot which is able to answer questions about a given Yelp business. "+ \
-        "The following content provided is the background context of the restaurant, followed by the reviews. "+ \
-        "If the answer to their query is not provided within the background context, you may look through the reviews to see if any of them give an answer. " + \
-        "If you still do not find the answer, notify them that the information was not provided by the business itself. " + \
-        "Please be concise as the point of this chatbot is to get quick AND descriptive information about businesses! " + \
+    res = "You are QuickYelp, a chatbot which is able to answer questions about a given Yelp business. \n"+ \
+        "The following content provided is the background context of the restaurant, followed by the reviews. \n"+ \
+        "If the answer to their query is not provided within the background context, you may look through the reviews to see if any of them give an answer. \n" + \
+        "If you still do not find the answer, notify them that the information was not provided by the business itself. \n" + \
+        "Please be concise as the point of this chatbot is to get quick AND descriptive information about businesses! \n" + \
         "Beware: some content is formatted in Python data structures (lists, dicts, etc).\n\n"
 
     sections = ["name", "history", "specialties", "location", "phone", "categories",

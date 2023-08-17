@@ -20,17 +20,7 @@ app = Flask(__name__)
 
 LOADER = None
 INDEX = None
-DEBUGGING = False
-
-
-def mock_query() -> str:
-    """
-    Mock chatbot query. Useful for debugging purposes.
-    """
-    replies = ["Certainly!", "I'm here to help!", "Ask me anything!"]
-    import time
-    time.sleep(2)
-    return random.choice(replies)
+DEBUGGING = True # Avoid utilizing Yelp Fusion and OpenAI
 
 
 def craft_initial_response(business_data: dict) -> str:
@@ -102,13 +92,11 @@ def index():
                     training_data = format_business_data(business_data, web_app=True)
                     temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
                     with temp_file as f:
-                        json.dump(training_data, f)
-                    
-                    # DEBUGGING PURPOSES: See what data the chatbot is trained on
-                    # with open(temp_file.name, 'r') as temp_file_read:
-                    #     content = temp_file_read.read()
-                    #     with open("webapp_data.txt", 'w') as f:
-                    #         f.write(content)
+                        f.write(training_data)
+
+                        # DEBUGGING PURPOSES: See what data the chatbot is trained on
+                        # with open("webapp_data.txt", 'w') as f:
+                        #     f.write(training_data)
 
                     temp_file_path = temp_file.name
                     LOADER = TextLoader(temp_file_path)
@@ -147,7 +135,10 @@ def index():
                 if not DEBUGGING:
                     chatbot_reply = INDEX.query(query, llm=ChatOpenAI())
                 else:
-                    chatbot_reply = mock_query()
+                    replies = ["Certainly!", "I'm here to help!", "Ask me anything!", "I am QuickYelp!"]
+                    import time
+                    time.sleep(2)
+                    chatbot_reply = random.choice(replies)
             else:
                 # Query is too long
                 chatbot_reply = f"Sorry! Your message ({len(query)} characters) is too long. The maximum is 200 characters."

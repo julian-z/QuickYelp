@@ -111,8 +111,9 @@
                             <div className="powered-section">
                                 <p className="powered-by">
                                     Powered By:&nbsp;
-                                    <a href="https://fusion.yelp.com/"><img className="powered-logos" src=".././static/images/yelp.png" alt="Yelp Fusion"/></a>
-                                    <a href="https://openai.com/blog/openai-api"><img className="powered-logos" src=".././static/images/openai.png" alt="OpenAI"/></a>
+                                    <a href="https://fusion.yelp.com/"><img className="powered-logos" src=".././static/images/yelp.png" alt="Yelp Fusion"/> </a>
+                                    <a href="https://openai.com/blog/openai-api"><img className="powered-logos" src=".././static/images/openai.png" alt="OpenAI"/> </a>
+                                    <a href="https://www.langchain.com/"><img className="powered-logos" src=".././static/images/langchain.png" alt="LangChain "/></a>
                                 </p>
                                 <p className="powered-by">
                                     GitHub:&nbsp;
@@ -133,9 +134,8 @@
                                             }`}
                                         >
                                             {entry.startsWith("BOT") && "🤖 "}
-                                            {entry.substring(3) === "LOADING" && (
-                                                <span className="loading-animation"></span>
-                                            )}
+                                            {entry.substring(3) === "LOADING" && "Thinking... "}
+                                            {entry.substring(3) === "LOADING" && (<span className="loading-animation"></span>)}
                                             {entry.substring(3) !== "LOADING" && entry.substring(3)}
                                         </div>
                                     </div>

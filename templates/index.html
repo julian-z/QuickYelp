@@ -56,7 +56,7 @@
                 event.preventDefault();
 
                 const chatbotMessage = document.querySelector(".popup-content .chatbot-message");
-                chatbotMessage.textContent = `🤖 Verifying Yelp URL...`;
+                chatbotMessage.textContent = `📶 Verifying Yelp URL... `;
 
                 const loadingAnimation = document.createElement("span");
                 loadingAnimation.className = "loading-animation";
@@ -67,7 +67,8 @@
                 let elapsedSeconds = 0;
                 const elapsedTimeInterval = setInterval(() => {
                     elapsedSeconds++;
-                    chatbotMessage.textContent = `🤖 Give me one moment as I learn about this business... Estimated time: ${estimatedTime} seconds. Elapsed time: ${elapsedSeconds} seconds. `;
+                    chatbotMessage.innerHTML = `🧠 Give me one moment as I learn about this business...<br>
+                    Estimated time: ${elapsedSeconds}/${estimatedTime} seconds. `;
                     chatbotMessage.appendChild(loadingAnimation);
                 }, 1000);
     
@@ -177,8 +178,9 @@
                             <div className="powered-section">
                                 <p className="powered-by">
                                     Powered By:&nbsp;
-                                    <a href="https://fusion.yelp.com/"><img className="powered-logos" src=".././static/images/yelp.png" alt="Yelp Fusion"/></a>
-                                    <a href="https://openai.com/blog/openai-api"><img className="powered-logos" src=".././static/images/openai.png" alt="OpenAI"/></a>
+                                    <a href="https://fusion.yelp.com/"><img className="powered-logos" src=".././static/images/yelp.png" alt="Yelp Fusion"/> </a>
+                                    <a href="https://openai.com/blog/openai-api"><img className="powered-logos" src=".././static/images/openai.png" alt="OpenAI"/> </a>
+                                    <a href="https://www.langchain.com/"><img className="powered-logos" src=".././static/images/langchain.png" alt="LangChain "/></a>
                                 </p>
                                 <p className="powered-by">
                                     GitHub:&nbsp;
