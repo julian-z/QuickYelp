@@ -33,6 +33,8 @@ app.config['SECRET_KEY'] = SECRET_KEY
 LOADER = None
 INDEX = None
 DEBUGGING = True # Avoid utilizing Yelp Fusion and OpenAI
+RATE_LIMIT_MIN = '8'
+RATE_LIMIT_DAY = '150'
 AI_REPLIES = [
     "Oops! It seems like the Yelp URL you entered is not valid. Please try again.",
     "Sorry, but the Yelp URL you provided is incorrect or unsupported. Please double-check and retry.",
@@ -63,12 +65,14 @@ class URLForm(FlaskForm):
 
 
 @app.route("/", methods=["GET", "POST"])
-@limiter.limit("8/minute")
-@limiter.limit("100/day")
+@limiter.limit(f"{RATE_LIMIT_MIN}/minute")
+@limiter.limit(f"{RATE_LIMIT_DAY}/day")
 def index():
     chat_history = []
     global INDEX, LOADER, DEBUGGING, AI_REPLIES, SAMPLE_LINKS
     if request.method == "POST":
+
+        # Handle URL/Number popup
         if "url" in request.form and "num_pages" in request.form:
 
             # Utilize Flask-WTF for security precautions
@@ -135,6 +139,7 @@ def index():
             else:
                 return render_template("index.html", error_message=AI_REPLIES[random.randint(0, len(AI_REPLIES)-1)], sample_link=SAMPLE_LINKS[random.randint(0, len(SAMPLE_LINKS)-1)], form=url_form)
         
+        # Handle chatbot queries
         else:
             query = request.form.get("query")
 
@@ -175,15 +180,15 @@ def index():
 
 @app.errorhandler(RateLimitExceeded)
 def handle_rate_limit_error(e):
+    error_message = f"❌ Notice: Rate limit of requests has been exceeded ({RATE_LIMIT_MIN} links per minute, {RATE_LIMIT_DAY} per day). Please try later or slow down incoming requests."
+
     if request.method == "POST":
         if "url" in request.form and "num_pages" in request.form:
-            error_message = "❌ Notice: Rate limit of requests has been exceeded (8 links per minute, 100 per day). Please try later or slow down incoming requests."
             return render_template("index.html", error_message=error_message, sample_link=random.choice(SAMPLE_LINKS), form=URLForm(request.form))
         else:
             query = request.form.get("query")
 
             if len(query) <= 200:
-                # Query our vector index after sanitizing
                 query = bleach.clean(query, tags=[], attributes={}, strip=True)
 
                 for word in wordset:
@@ -193,10 +198,9 @@ def handle_rate_limit_error(e):
 
             chat_history = request.form.getlist("chat_history[]")
             chat_history.append("USR" + query)
-            chat_history.append("BOT❌ Notice: Rate limit of requests has been exceeded (8 messages per minute, 100 per day). Please try later or slow down incoming requests.")
-            return jsonify({"sanitized_user_query": query, "chat_history": chat_history, "chatbot_reply": "❌ Notice: Rate limit of requests has been exceeded (8 messages per minute, 100 per day). Please try later or slow down incoming requests."})
+            chat_history.append("BOT" + error_message)
+            return jsonify({"sanitized_user_query": query, "chat_history": chat_history, "chatbot_reply": error_message})
 
-    error_message = "❌ Notice: Rate limit of requests has been exceeded (8 links per minute, 100 per day). Please try later or slow down incoming requests."
     return render_template("index.html", error_message=error_message, sample_link=random.choice(SAMPLE_LINKS), form=URLForm(request.form))
 
 
