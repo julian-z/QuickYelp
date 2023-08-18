@@ -32,7 +32,7 @@ app.config['SECRET_KEY'] = SECRET_KEY
 
 LOADER = None
 INDEX = None
-DEBUGGING = True # Avoid utilizing Yelp Fusion and OpenAI
+DEBUGGING = False # Avoid utilizing Yelp Fusion and OpenAI
 RATE_LIMIT_MIN = '8'
 RATE_LIMIT_DAY = '150'
 AI_REPLIES = [
