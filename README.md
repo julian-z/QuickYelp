@@ -24,7 +24,8 @@ The purpose of Yelp Fusion is to retrieve data related to the business in questi
 - JavaScript: Front-end
     - React: Front-end
 
-# Screenshots
+# Screenshots 🎥
+As of 8/18/23:
 ![](https://github.com/julian-z/QuickYelp/blob/main/static/images/home1.png)
 ![](https://github.com/julian-z/QuickYelp/blob/main/static/images/home2.png)
 ![](https://github.com/julian-z/QuickYelp/blob/main/static/images/chat.png)
