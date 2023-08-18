@@ -20,3 +20,4 @@ share/
 api_call_examples.txt
 webapp_data.txt
 formatted_data.txt
+censored_words.py

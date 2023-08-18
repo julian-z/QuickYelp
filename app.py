@@ -6,6 +6,11 @@ from flask import Flask, render_template, request, jsonify
 from flask_wtf import FlaskForm
 from wtforms import StringField
 from wtforms.validators import DataRequired, URL
+from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter, RateLimitExceeded
+from flask_limiter.util import get_remote_address
+from censored_words import wordset
+import bleach
 
 import random
 import tempfile
@@ -21,11 +26,36 @@ from shell import validate_url, scrape_yelp_page, format_business_data
 os.environ["OPENAI_API_KEY"] = OPENAI_KEY
 
 app = Flask(__name__)
+csrf = CSRFProtect(app)
+limiter = Limiter(get_remote_address, app=app, storage_uri="memory://") # TO-DO: Configure storage when deployed
 app.config['SECRET_KEY'] = SECRET_KEY
 
 LOADER = None
 INDEX = None
 DEBUGGING = True # Avoid utilizing Yelp Fusion and OpenAI
+AI_REPLIES = [
+    "Oops! It seems like the Yelp URL you entered is not valid. Please try again.",
+    "Sorry, but the Yelp URL you provided is incorrect or unsupported. Please double-check and retry.",
+    "Uh-oh! The Yelp URL you entered doesn't seem to work. Please provide a valid URL and try again.",
+    "We encountered an issue with the Yelp URL you provided. Please make sure it's correct and retry.",
+    "Hmmm... It appears the Yelp URL you entered is not valid. Kindly check it and try once more."
+]
+SAMPLE_LINKS = [
+    "https://www.yelp.com/biz/nep-cafe-by-kei-concepts-fountain-valley-4",
+    "https://www.yelp.com/biz/baekjeong-irvine-irvine-2",
+    "https://www.yelp.com/biz/cucina-enoteca-irvine-irvine-2",
+    "https://www.yelp.com/biz/omomo-tea-shoppe-irvine",
+    "https://www.yelp.com/biz/eureka-irvine-2",
+    "https://www.yelp.com/biz/curry-house-coco-ichibanya-irvine",
+    "https://www.yelp.com/biz/85-c-bakery-cafe-irvine-irvine",
+    "https://www.yelp.com/biz/pepper-lunch-irvine",
+    "https://www.yelp.com/biz/stacks-pancake-house-irvine-2",
+    "https://www.yelp.com/biz/poached-kitchen-irvine-2",
+    "https://www.yelp.com/biz/yup-dduk-irvine-irvine",
+    "https://www.yelp.com/biz/orobae-irvine",
+    "https://www.yelp.com/biz/breakfast-republic-irvine-2",
+    "https://www.yelp.com/biz/daves-hot-chicken-irvine-2"
+]
 
 
 class URLForm(FlaskForm):
@@ -33,33 +63,11 @@ class URLForm(FlaskForm):
 
 
 @app.route("/", methods=["GET", "POST"])
+@limiter.limit("8/minute")
+@limiter.limit("100/day")
 def index():
-    ai_replies = [
-        "Oops! It seems like the Yelp URL you entered is not valid. Please try again.",
-        "Sorry, but the Yelp URL you provided is incorrect or unsupported. Please double-check and retry.",
-        "Uh-oh! The Yelp URL you entered doesn't seem to work. Please provide a valid URL and try again.",
-        "We encountered an issue with the Yelp URL you provided. Please make sure it's correct and retry.",
-        "Hmmm... It appears the Yelp URL you entered is not valid. Kindly check it and try once more."
-    ]
-    sample_links = [
-        "https://www.yelp.com/biz/nep-cafe-by-kei-concepts-fountain-valley-4",
-        "https://www.yelp.com/biz/baekjeong-irvine-irvine-2",
-        "https://www.yelp.com/biz/cucina-enoteca-irvine-irvine-2",
-        "https://www.yelp.com/biz/omomo-tea-shoppe-irvine",
-        "https://www.yelp.com/biz/eureka-irvine-2",
-        "https://www.yelp.com/biz/curry-house-coco-ichibanya-irvine",
-        "https://www.yelp.com/biz/85-c-bakery-cafe-irvine-irvine",
-        "https://www.yelp.com/biz/pepper-lunch-irvine",
-        "https://www.yelp.com/biz/stacks-pancake-house-irvine-2",
-        "https://www.yelp.com/biz/poached-kitchen-irvine-2",
-        "https://www.yelp.com/biz/yup-dduk-irvine-irvine",
-        "https://www.yelp.com/biz/orobae-irvine",
-        "https://www.yelp.com/biz/breakfast-republic-irvine-2",
-        "https://www.yelp.com/biz/daves-hot-chicken-irvine-2"
-    ]
     chat_history = []
-
-    global INDEX, LOADER, DEBUGGING
+    global INDEX, LOADER, DEBUGGING, AI_REPLIES, SAMPLE_LINKS
     if request.method == "POST":
         if "url" in request.form and "num_pages" in request.form:
 
@@ -73,10 +81,12 @@ def index():
 
                 # Re-prompt user if url or num_pages is not valid
                 if not validate_url(url):
-                    return render_template("index.html", error_message=ai_replies[random.randint(0, len(ai_replies)-1)], sample_link=sample_links[random.randint(0, len(sample_links)-1)], form=url_form)
+                    return render_template("index.html", error_message=AI_REPLIES[random.randint(0, len(AI_REPLIES)-1)], sample_link=SAMPLE_LINKS[random.randint(0, len(SAMPLE_LINKS)-1)], form=url_form)
 
                 # Perform data scraping here using the provided URL and num_pages
                 else:
+                    initial_response = None
+
                     if not DEBUGGING:             
                         business_data = scrape_yelp_page(url, num_pages, web_app=True)
                         training_data = format_business_data(business_data, web_app=True)
@@ -88,10 +98,13 @@ def index():
                             # with open("webapp_data.txt", 'w') as f:
                             #     f.write(training_data)
 
-                        temp_file_path = temp_file.name
-                        LOADER = TextLoader(temp_file_path)
-                        INDEX = VectorstoreIndexCreator().from_loaders([LOADER])
-                        os.remove(temp_file_path)
+                        try:
+                            temp_file_path = temp_file.name
+                            LOADER = TextLoader(temp_file_path)
+                            INDEX = VectorstoreIndexCreator().from_loaders([LOADER])
+                            os.remove(temp_file_path)
+                        except:
+                            initial_response = "❌ Notice: Data retrieval has failed. Please report this instance to jzulfika@uci.edu."
                     else:
                         print("MOCKING SCRAPING")
                         import time
@@ -116,24 +129,36 @@ def index():
                             "reviews": {'5': ["Great!"], '4': ["Good!"], '3': ["Decent."]}
                         }
 
-                    initial_response = craft_initial_response(business_data)
+                    initial_response = craft_initial_response(business_data) if not initial_response else initial_response
                     return render_template("chat.html", initial_response=initial_response)
             
             else:
-                return render_template("index.html", error_message=ai_replies[random.randint(0, len(ai_replies)-1)], sample_link=sample_links[random.randint(0, len(sample_links)-1)], form=url_form)
+                return render_template("index.html", error_message=AI_REPLIES[random.randint(0, len(AI_REPLIES)-1)], sample_link=SAMPLE_LINKS[random.randint(0, len(SAMPLE_LINKS)-1)], form=url_form)
         
         else:
             query = request.form.get("query")
 
             if len(query) <= 200:
-                # Perform interaction with OpenAI and get a chatbot reply
-                if not DEBUGGING:
-                    chatbot_reply = INDEX.query(query, llm=ChatOpenAI())
+                # Query our vector index after sanitizing
+                query = bleach.clean(query, tags=[], attributes={}, strip=True)
+
+                for word in wordset:
+                    if word in query.lower():
+                        query = '*' * len(query)
+                        chatbot_reply = f"❌ Your message has been marked as inappropriate: \"{word[0]}{'*'*(len(word)-1)}\""
+                        break
                 else:
-                    replies = ["Certainly!", "I'm here to help!", "Ask me anything!", "I am QuickYelp!"]
-                    import time
-                    time.sleep(2)
-                    chatbot_reply = random.choice(replies)
+                    if not DEBUGGING:
+                        chatbot_reply = None
+                        try:
+                            chatbot_reply = INDEX.query(query, llm=ChatOpenAI())
+                        except:
+                            chatbot_reply = "❌ Notice: Chatbot has failed to query. Please report this instance to jzulfika@uci.edu."
+                    else:
+                        replies = ["Certainly!", "I'm here to help!", "Ask me anything!", "I am QuickYelp!"]
+                        import time
+                        time.sleep(1)
+                        chatbot_reply = random.choice(replies)
             else:
                 # Query is too long
                 chatbot_reply = f"Sorry! Your message ({len(query)} characters) is too long. The maximum is 200 characters."
@@ -141,11 +166,38 @@ def index():
             chat_history = request.form.getlist("chat_history[]")
             chat_history.append("USR" + query)
             chat_history.append("BOT" + chatbot_reply)
-            return jsonify({"chat_history": chat_history, "chatbot_reply": chatbot_reply})
+            return jsonify({"sanitized_user_query": query, "chat_history": chat_history, "chatbot_reply": chatbot_reply})
     
     LOADER = INDEX = None
     url_form = URLForm(request.form)
-    return render_template("index.html", error_message="", sample_link=sample_links[random.randint(0, len(sample_links)-1)], form=url_form)
+    return render_template("index.html", error_message="", sample_link=SAMPLE_LINKS[random.randint(0, len(SAMPLE_LINKS)-1)], form=url_form)
+
+
+@app.errorhandler(RateLimitExceeded)
+def handle_rate_limit_error(e):
+    if request.method == "POST":
+        if "url" in request.form and "num_pages" in request.form:
+            error_message = "❌ Notice: Rate limit of requests has been exceeded (8 links per minute, 100 per day). Please try later or slow down incoming requests."
+            return render_template("index.html", error_message=error_message, sample_link=random.choice(SAMPLE_LINKS), form=URLForm(request.form))
+        else:
+            query = request.form.get("query")
+
+            if len(query) <= 200:
+                # Query our vector index after sanitizing
+                query = bleach.clean(query, tags=[], attributes={}, strip=True)
+
+                for word in wordset:
+                    if word in query.lower():
+                        query = '*' * len(query)
+                        break
+
+            chat_history = request.form.getlist("chat_history[]")
+            chat_history.append("USR" + query)
+            chat_history.append("BOT❌ Notice: Rate limit of requests has been exceeded (8 messages per minute, 100 per day). Please try later or slow down incoming requests.")
+            return jsonify({"sanitized_user_query": query, "chat_history": chat_history, "chatbot_reply": "❌ Notice: Rate limit of requests has been exceeded (8 messages per minute, 100 per day). Please try later or slow down incoming requests."})
+
+    error_message = "❌ Notice: Rate limit of requests has been exceeded (8 links per minute, 100 per day). Please try later or slow down incoming requests."
+    return render_template("index.html", error_message=error_message, sample_link=random.choice(SAMPLE_LINKS), form=URLForm(request.form))
 
 
 def craft_initial_response(business_data: dict) -> str:

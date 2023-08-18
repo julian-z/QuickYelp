@@ -60,6 +60,7 @@
 
                     if (response.ok) {
                         const data = await response.json();
+                        const sanitizedUserQuery = data.sanitized_user_query;
                         const chatbotReply = data.chatbot_reply;
 
                         // Replace the user's query with the chatbot's reply
@@ -68,8 +69,23 @@
                         this.setState((prevState) => ({
                             chatHistory: [
                                 ...prevState.chatHistory.slice(0, -2),
-                                "USR" + userQuery,
+                                "USR" + sanitizedUserQuery,
                                 "BOT" + chatbotReply,
+                            ],
+                            query: "",
+                            waiting: false,
+                        }), () => {
+                            // Scroll the chat log container to the bottom
+                            this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
+                        });
+                    }
+                    else if (response.status === 429) {
+                        // Rate limit exceeded (actually handled by handle_rate_limit_error() in app.py but I'll keep it here in case)
+                        this.setState((prevState) => ({
+                            chatHistory: [
+                                ...prevState.chatHistory.slice(0, -2),
+                                "USR" + userQuery,
+                                "BOT❌ Notice: Rate limit of requests has been exceeded (8 messages per minute, 100 per day). Please try later or slow down incoming requests.",
                             ],
                             query: "",
                             waiting: false,
@@ -145,6 +161,7 @@
                         
                         <div className="query-bar">
                             <form id="chat-form" onSubmit={this.handleSubmit}>
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <input
                                     type="text"
                                     name="query"
