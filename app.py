@@ -30,8 +30,9 @@ csrf = CSRFProtect(app)
 limiter = Limiter(get_remote_address, app=app, storage_uri="memory://") # TO-DO: Configure storage when deployed
 app.config['SECRET_KEY'] = SECRET_KEY
 
-LOADER = None
+LOADER = None # TO-DO: Session variables rather than globals
 INDEX = None
+
 DEBUGGING = False # Avoid utilizing Yelp Fusion and OpenAI
 RATE_LIMIT_MIN = '8'
 RATE_LIMIT_DAY = '150'
@@ -107,8 +108,9 @@ def index():
                             LOADER = TextLoader(temp_file_path)
                             INDEX = VectorstoreIndexCreator().from_loaders([LOADER])
                             os.remove(temp_file_path)
-                        except:
+                        except Exception as e:
                             initial_response = "❌ Notice: Data retrieval has failed. Please report this instance to jzulfika@uci.edu."
+                            print(repr(e))
                     else:
                         print("MOCKING SCRAPING")
                         import time
@@ -157,8 +159,9 @@ def index():
                         chatbot_reply = None
                         try:
                             chatbot_reply = INDEX.query(query, llm=ChatOpenAI())
-                        except:
+                        except Exception as e:
                             chatbot_reply = "❌ Notice: Chatbot has failed to query. Please report this instance to jzulfika@uci.edu."
+                            print(repr(e))
                     else:
                         replies = ["Certainly!", "I'm here to help!", "Ask me anything!", "I am QuickYelp!"]
                         import time
