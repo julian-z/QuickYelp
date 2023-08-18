@@ -20,12 +20,13 @@
                 QuickYelp - AI Yelp Review Scanner
             </h2>
             <form method="post">
-                <label for="url">Yelp URL:</label>
-                <input type="text" name="url" autocomplete="off" required placeholder="https://www.yelp.com/biz/..."><br>
+                {{ form.hidden_tag() }}
+                <label for="{{ form.url.id }}">Yelp URL:</label>
+                {{ form.url(class="form-control", autocomplete="off", placeholder="https://www.yelp.com/biz/...") }}<br>
                 <label for="num_pages">How Many Pages of Reviews Should I Scan? (0-5):</label>
-                <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br>
+                <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required placeholder="Maximum of 5 pages..."><br>
                 <input type="submit" value="Start Chat">
-            </form>     
+            </form>
 
             {% if error_message != "" %}
                 <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">

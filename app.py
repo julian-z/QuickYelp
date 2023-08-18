@@ -3,12 +3,15 @@
 # Flask implementation.
 
 from flask import Flask, render_template, request, jsonify
+from flask_wtf import FlaskForm
+from wtforms import StringField
+from wtforms.validators import DataRequired, URL
+
 import random
-import json
 import tempfile
 import os
 
-from api_key import OPENAI_KEY
+from api_key import OPENAI_KEY, SECRET_KEY
 from langchain.document_loaders import TextLoader
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.chat_models import ChatOpenAI
@@ -16,40 +19,17 @@ from langchain.chat_models import ChatOpenAI
 from shell import validate_url, scrape_yelp_page, format_business_data
 
 os.environ["OPENAI_API_KEY"] = OPENAI_KEY
+
 app = Flask(__name__)
+app.config['SECRET_KEY'] = SECRET_KEY
 
 LOADER = None
 INDEX = None
-DEBUGGING = False # Avoid utilizing Yelp Fusion and OpenAI
+DEBUGGING = True # Avoid utilizing Yelp Fusion and OpenAI
 
 
-def craft_initial_response(business_data: dict) -> str:
-    """
-    Present a string which shows what data has been retrieved from the Yelp scrape.
-    """
-    found = False
-    res = "Successfully retrieved: "
-
-    if business_data["name"]:
-        res += "Name, "
-        found = True
-    if business_data["history"]:
-        res += "History/About, "
-        found = True
-    if business_data["location"]:
-        res += " Location, "
-        found = True
-    if business_data["phone"]:
-        res += "Phone, "
-        found = True
-    if business_data["hours"]:
-        res += "Hours, "
-        found = True
-    if business_data["reviews"]:
-        res += "Reviews, "
-        found = True
-    
-    return "✅ "+res[:-2] if found else "❌ Notice: Data retrieval has failed. Please report this instance to jzulfika@uci.edu if the issue persists."
+class URLForm(FlaskForm):
+    url = StringField('Yelp URL', validators=[DataRequired(), URL()])
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -70,64 +50,77 @@ def index():
         "https://www.yelp.com/biz/curry-house-coco-ichibanya-irvine",
         "https://www.yelp.com/biz/85-c-bakery-cafe-irvine-irvine",
         "https://www.yelp.com/biz/pepper-lunch-irvine",
-        "https://www.yelp.com/biz/stacks-pancake-house-irvine-2"
+        "https://www.yelp.com/biz/stacks-pancake-house-irvine-2",
+        "https://www.yelp.com/biz/poached-kitchen-irvine-2",
+        "https://www.yelp.com/biz/yup-dduk-irvine-irvine",
+        "https://www.yelp.com/biz/orobae-irvine",
+        "https://www.yelp.com/biz/breakfast-republic-irvine-2",
+        "https://www.yelp.com/biz/daves-hot-chicken-irvine-2"
     ]
     chat_history = []
 
     global INDEX, LOADER, DEBUGGING
     if request.method == "POST":
         if "url" in request.form and "num_pages" in request.form:
-            # Initial form submission for starting the chatbot
-            url = request.form.get("url")
-            num_pages = int(request.form.get("num_pages"))
 
-            # Re-prompt user if url or num_pages is not valid
-            if not validate_url(url):
-                return render_template("index.html", error_message=ai_replies[random.randint(0, len(ai_replies)-1)], sample_link=sample_links[random.randint(0, len(sample_links)-1)])
+            # Utilize Flask-WTF for security precautions
+            url_form = URLForm(request.form)
+            if url_form.validate_on_submit():
 
-            # Perform data scraping here using the provided URL and num_pages
-            else:
-                if not DEBUGGING:             
-                    business_data = scrape_yelp_page(url, num_pages, web_app=True)
-                    training_data = format_business_data(business_data, web_app=True)
-                    temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
-                    with temp_file as f:
-                        f.write(training_data)
+                # Initial form submission for starting the chatbot
+                url = request.form.get("url")
+                num_pages = int(request.form.get("num_pages"))
 
-                        # DEBUGGING PURPOSES: See what data the chatbot is trained on
-                        # with open("webapp_data.txt", 'w') as f:
-                        #     f.write(training_data)
+                # Re-prompt user if url or num_pages is not valid
+                if not validate_url(url):
+                    return render_template("index.html", error_message=ai_replies[random.randint(0, len(ai_replies)-1)], sample_link=sample_links[random.randint(0, len(sample_links)-1)], form=url_form)
 
-                    temp_file_path = temp_file.name
-                    LOADER = TextLoader(temp_file_path)
-                    INDEX = VectorstoreIndexCreator().from_loaders([LOADER])
-                    os.remove(temp_file_path)
+                # Perform data scraping here using the provided URL and num_pages
                 else:
-                    print("MOCKING SCRAPING")
-                    import time
-                    for i in range(num_pages):
-                        print("SCRAPING PAGE", i+1)
-                        time.sleep(6.5)
-                    LOADER = "Mock Loader"
-                    INDEX = "Mock Index"
-                    print("MOCK SCRAPE DONE")
-                    business_data = {
-                        "name": random.choice(["Restaurant", None]), 
-                        "history": random.choice(["History", None]),
-                        "specialties": random.choice(["Specialties", None]),
-                        "location": random.choice(["Restaurant", None]),
-                        "phone": random.choice(["123-456-7890", None]),
-                        "categories": random.choice([["Food"], None]),
-                        "overall_rating": random.choice(["5.0", None]),
-                        "price_range": random.choice(["Money", None]),
-                        "hours": random.choice([["Open"], None]),
-                        "is_open_now": random.choice([True, None]),
-                        "transactions": random.choice(["Transactions", None]),
-                        "reviews": {'5': ["Great!"], '4': ["Good!"], '3': ["Decent."]}
-                    }
+                    if not DEBUGGING:             
+                        business_data = scrape_yelp_page(url, num_pages, web_app=True)
+                        training_data = format_business_data(business_data, web_app=True)
+                        temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
+                        with temp_file as f:
+                            f.write(training_data)
 
-                initial_response = craft_initial_response(business_data)
-                return render_template("chat.html", initial_response=initial_response)
+                            # DEBUGGING PURPOSES: See what data the chatbot is trained on
+                            # with open("webapp_data.txt", 'w') as f:
+                            #     f.write(training_data)
+
+                        temp_file_path = temp_file.name
+                        LOADER = TextLoader(temp_file_path)
+                        INDEX = VectorstoreIndexCreator().from_loaders([LOADER])
+                        os.remove(temp_file_path)
+                    else:
+                        print("MOCKING SCRAPING")
+                        import time
+                        for i in range(num_pages):
+                            print("SCRAPING PAGE", i+1)
+                            time.sleep(6.5)
+                        LOADER = "Mock Loader"
+                        INDEX = "Mock Index"
+                        print("MOCK SCRAPE DONE")
+                        business_data = {
+                            "name": random.choice(["Restaurant", None]), 
+                            "history": random.choice(["History", None]),
+                            "specialties": random.choice(["Specialties", None]),
+                            "location": random.choice(["Restaurant", None]),
+                            "phone": random.choice(["123-456-7890", None]),
+                            "categories": random.choice([["Food"], None]),
+                            "overall_rating": random.choice(["5.0", None]),
+                            "price_range": random.choice(["Money", None]),
+                            "hours": random.choice([["Open"], None]),
+                            "is_open_now": random.choice([True, None]),
+                            "transactions": random.choice(["Transactions", None]),
+                            "reviews": {'5': ["Great!"], '4': ["Good!"], '3': ["Decent."]}
+                        }
+
+                    initial_response = craft_initial_response(business_data)
+                    return render_template("chat.html", initial_response=initial_response)
+            
+            else:
+                return render_template("index.html", error_message=ai_replies[random.randint(0, len(ai_replies)-1)], sample_link=sample_links[random.randint(0, len(sample_links)-1)], form=url_form)
         
         else:
             query = request.form.get("query")
@@ -151,7 +144,37 @@ def index():
             return jsonify({"chat_history": chat_history, "chatbot_reply": chatbot_reply})
     
     LOADER = INDEX = None
-    return render_template("index.html", error_message="", sample_link=sample_links[random.randint(0, len(sample_links)-1)])
+    url_form = URLForm(request.form)
+    return render_template("index.html", error_message="", sample_link=sample_links[random.randint(0, len(sample_links)-1)], form=url_form)
+
+
+def craft_initial_response(business_data: dict) -> str:
+    """
+    Present a string which shows what data has been retrieved from the Yelp scrape.
+    """
+    found = False
+    res = "✅ Successfully retrieved: "
+
+    if business_data["name"]:
+        res += "Name, "
+        found = True
+    if business_data["history"]:
+        res += "History/About, "
+        found = True
+    if business_data["location"]:
+        res += " Location, "
+        found = True
+    if business_data["phone"]:
+        res += "Phone, "
+        found = True
+    if business_data["hours"]:
+        res += "Hours, "
+        found = True
+    if business_data["reviews"]:
+        res += "Reviews, "
+        found = True
+    
+    return res[:-2] if found else "❌ Notice: Data retrieval has failed. Please report this instance to jzulfika@uci.edu if the issue persists."
 
 
 if __name__ == "__main__":
