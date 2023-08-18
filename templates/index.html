@@ -64,12 +64,20 @@
                 chatbotMessage.appendChild(loadingAnimation);
 
                 const num_pages = parseInt(document.querySelector("input[name='num_pages']").value);
-                const estimatedTime = Math.ceil(num_pages * 6.5);
+                const estimatedTime = 8;
                 let elapsedSeconds = 0;
                 const elapsedTimeInterval = setInterval(() => {
                     elapsedSeconds++;
-                    chatbotMessage.innerHTML = `🧠 Give me one moment as I learn about this business...<br>
-                    Estimated time: ${elapsedSeconds}/${estimatedTime} seconds. `;
+                    const percentage = Math.round((elapsedSeconds / estimatedTime) * 100);
+                    if (percentage < 100) {
+                        chatbotMessage.innerHTML = `🧠 Give me one moment as I learn about this business... (${percentage}%)`;
+                    }
+                    else if (percentage > 200) {
+                        chatbotMessage.innerHTML = `🧠 Taking longer than expected... please wait or refresh to try again.`;
+                    }
+                    else {
+                        chatbotMessage.innerHTML = `🧠 Give me one moment as I learn about this business... (100%)`;
+                    }
                     chatbotMessage.appendChild(loadingAnimation);
                 }, 1000);
     

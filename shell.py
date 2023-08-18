@@ -7,6 +7,9 @@ from collections import defaultdict
 from unidecode import unidecode
 from lxml import html
 from html import unescape
+import asyncio
+import aiohttp
+
 import json
 import time
 import re
@@ -19,6 +22,8 @@ from langchain.indexes import VectorstoreIndexCreator
 from langchain.chat_models import ChatOpenAI
 
 os.environ["OPENAI_API_KEY"] = OPENAI_KEY
+
+DEBUGGING = False
 
 
 def clean(input_string):
@@ -48,19 +53,48 @@ def convert_yelp_dollar_signs(rating: str) -> str:
         return "No price range provided"
 
 
+async def fetch_url(session, url):
+    """
+    Fetch url asynchronously.
+    """
+    print("REQUESTING", url)
+
+    async with session.get(url) as response:
+        # Avoid making high-frequency requests to Yelp -- ethical programming
+        await asyncio.sleep(1)
+
+        if response.status == 200:
+            return await response.text()
+        else:
+            print("ERROR -- STATUS CODE:", response.status)
+            return f"! ERROR REQUESTING {url} !"
+
+
+async def scrape_review_urls(review_urls):
+    """
+    Run multiple requests concurrently.
+    """
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for url in review_urls:
+            task = asyncio.create_task(fetch_url(session, url))
+            tasks.append(task)
+        return await asyncio.gather(*tasks)
+
+
 def scrape_yelp_page(base_url: str, num_pages: int, web_app: bool = False):
     """
     Scrapes the first "num_pages" review pages of a Yelp URL and stores into a JSON object.
         Resulting JSON object is written into business_data.txt
     """
     # Construct URLs to first 5 review pages
-    review_urls = [base_url]
-
     def _generate_review_url(base_url, start_value):
         return base_url + f'&start={start_value}' if '?' in base_url else base_url + f'?start={start_value}'
-
-    for start_value in range(10, num_pages*10, 10):
-        review_urls.append(_generate_review_url(base_url, start_value))
+    review_urls = [base_url]+[_generate_review_url(base_url, start_value) for start_value in range(10, num_pages*10, 10)]
+    
+    # Replace review_urls with response objects
+    review_responses = asyncio.run(scrape_review_urls(review_urls))
+    print("RESPONSES RECEIVED, PARSING DATA")
 
     # Store information in business_data
     business_data = {
@@ -79,26 +113,25 @@ def scrape_yelp_page(base_url: str, num_pages: int, web_app: bool = False):
     }
 
     # Scrape reviews and retrieve business information
-    for i, url in enumerate(review_urls):
+    for i, response in enumerate(review_responses):
 
-        print(f"SCRAPING PAGE {i+1}:", url)
-
-        try:
-            # Avoid making high-frequency requests to Yelp. Ethical programming!
-            time.sleep(1)
-            response = requests.get(url)
-
-            if response.status_code == 200:
+        print(f"PARSING PAGE {i+1}:", review_urls[i])
+        if response[:7] == "! ERROR":
+            print("ERROR PARSING THIS PAGE")
+        else:
+            try:
                 # Get source code
-                source_code = unidecode(response.text)
-                if not web_app:
-                    with open("source_code.txt", 'w') as f:
-                        f.write(source_code)
+                if not DEBUGGING:
+                    source_code = unidecode(response)
+                    if not web_app:
+                        with open("source_code.txt", 'w') as f:
+                            f.write(source_code)
 
                 # DEBUGGING PURPOSES: Use static source_code
-                # source_code = ""
-                # with open("source_code.txt", 'r') as f:
-                #     source_code = f.read()
+                if DEBUGGING:
+                    source_code = ""
+                    with open("source_code.txt", 'r') as f:
+                        source_code = f.read()
                 
                 # Try to extract JSON object
                 start = source_code.index('<!--{"locale"')
@@ -148,7 +181,7 @@ def scrape_yelp_page(base_url: str, num_pages: int, web_app: bool = False):
                         location = '{"'+source_code[start:end+1]
 
                         try:
-                            location_as_dict = eval(location)
+                            location_as_dict = json.loads(location)
                             location = location_as_dict
                         except Exception as e:
                             print("ERROR CONVERTING LOCATION TO DICT", e, location)
@@ -177,15 +210,12 @@ def scrape_yelp_page(base_url: str, num_pages: int, web_app: bool = False):
 
                 except Exception as e:
                     print("ERROR RETRIEVING REVIEWS:", e)
-            
-            else:
-                print("ERROR -- STATUS CODE:", response.status_code)
 
-        except Exception as e:
-            print("ERROR:", e)
-            raise e
+            except Exception as e:
+                print("ERROR:", e)
+                raise e
 
-    print("CALLING YELP FUSION API TO FIND BUSINESS")
+    print("CALLING YELP FUSION API TO MATCH BUSINESS")
     # Try to call to Yelp Fusion API: Business Match
     # https://docs.developer.yelp.com/reference/v3_business_match
     yelp_fusion_api_business_match = None
@@ -347,66 +377,70 @@ if __name__ == "__main__":
     https://m.yelp.com/biz/world-wrapps-san-ramon?primary_source=biz_details&secondary_source=nav_bar&share_id=4C78CAD6-084F-41A2-A4CE-D42CCE3A0133&uid=q-o2wstFFth7bN91gMDSkA&utm_source=ishare
     https://yelp.to/gMUOLofNOg
     """
-    print('-'*100)
-    print("QuickYelp - AI Yelp Review ChatBot")
-    print("Developed by Julian Zulfikar, 2023\n")
-    print("Questions or persisting issues? E-mail: jzulfika@uci.edu")
-    print('-'*100)
+    if not DEBUGGING:
+        print('-'*100)
+        print("QuickYelp - AI Yelp Review ChatBot")
+        print("Developed by Julian Zulfikar, 2023\n")
+        print("Questions or persisting issues? E-mail: jzulfika@uci.edu")
+        print('-'*100)
 
-    ai_replies_1 = [
-        "Oops! It seems like the Yelp URL you entered is not valid. Please try again.",
-        "Sorry, but the Yelp URL you provided is incorrect or unsupported. Please double-check and retry.",
-        "Uh-oh! The Yelp URL you entered doesn't seem to work. Please provide a valid URL and try again.",
-        "We encountered an issue with the Yelp URL you provided. Please make sure it's correct and retry.",
-        "Hmmm... It appears the Yelp URL you entered is not valid. Kindly check it and try once more."
-    ]
-    while True:
-        base_url = input("URL: ")
-        if validate_url(base_url):
-            break
-        else:
-            print(ai_replies_1[randint(0, 4)])
-    print('-'*100)
+        ai_replies_1 = [
+            "Oops! It seems like the Yelp URL you entered is not valid. Please try again.",
+            "Sorry, but the Yelp URL you provided is incorrect or unsupported. Please double-check and retry.",
+            "Uh-oh! The Yelp URL you entered doesn't seem to work. Please provide a valid URL and try again.",
+            "We encountered an issue with the Yelp URL you provided. Please make sure it's correct and retry.",
+            "Hmmm... It appears the Yelp URL you entered is not valid. Kindly check it and try once more."
+        ]
+        while True:
+            base_url = input("URL: ")
+            if validate_url(base_url):
+                break
+            else:
+                print(ai_replies_1[randint(0, 4)])
+        print('-'*100)
 
-    ai_replies_2 = [
-        "Oops! The input should be a whole number (e.g., 1, 2, ...).",
-        "Oh no! Please provide only a whole number (e.g., 7, 3, ...).",
-        "My apologies! Only integers (e.g., 1, 2, ...) are allowed for this input.",
-        "Uh-oh! You can only enter whole numbers (e.g., 4, 5, ...).",
-        "Woopsie! The value should be an integer (e.g., 3, 8, ...)."
-    ]
-    ai_replies_3 = [
-        "My apologies! The integer should fall within the range of 0 to 5 (inclusive).",
-        "Oops! Please provide an integer between 0 and 5 (inclusive).",
-        "Oh no! The number must be between 0 and 5 (inclusive) to proceed.",
-        "Woopsie! The value should be an integer from 0 to 5 (inclusive).",
-        "Uh-oh! Please enter an integer between 0 and 5 (inclusive)."
-    ]
-    while True:
-        num_pages = input("Number of review pages to scrape (Max 5): ")
+        ai_replies_2 = [
+            "Oops! The input should be a whole number (e.g., 1, 2, ...).",
+            "Oh no! Please provide only a whole number (e.g., 7, 3, ...).",
+            "My apologies! Only integers (e.g., 1, 2, ...) are allowed for this input.",
+            "Uh-oh! You can only enter whole numbers (e.g., 4, 5, ...).",
+            "Woopsie! The value should be an integer (e.g., 3, 8, ...)."
+        ]
+        ai_replies_3 = [
+            "My apologies! The integer should fall within the range of 0 to 5 (inclusive).",
+            "Oops! Please provide an integer between 0 and 5 (inclusive).",
+            "Oh no! The number must be between 0 and 5 (inclusive) to proceed.",
+            "Woopsie! The value should be an integer from 0 to 5 (inclusive).",
+            "Uh-oh! Please enter an integer between 0 and 5 (inclusive)."
+        ]
+        while True:
+            num_pages = input("Number of review pages to scrape (Max 5): ")
 
-        try:
-            num_pages = int(num_pages)
-        except:
-            print(ai_replies_2[randint(0, 4)])
-            continue
+            try:
+                num_pages = int(num_pages)
+            except:
+                print(ai_replies_2[randint(0, 4)])
+                continue
 
-        if not (0 <= num_pages <= 5):
-            print(ai_replies_3[randint(0, 4)])
-            continue
-        else:
-            break
-    print('-'*100)
+            if not (0 <= num_pages <= 5):
+                print(ai_replies_3[randint(0, 4)])
+                continue
+            else:
+                break
+        print('-'*100)
 
-    # Scrape website
-    print("Scraping reviews...")
-    business_data = scrape_yelp_page(base_url, num_pages)
-    print("Done scraping!")
-    print('-'*100)
+        # Scrape website
+        print("Scraping reviews...")
+        start = time.perf_counter()
+        business_data = scrape_yelp_page(base_url, num_pages)
+        end = time.perf_counter()
+        print(f"Done scraping! Elapsed time: {end-start:.2f} seconds")
+        print('-'*100)
     
-    # DEBUGGING PURPOSES: Load business_data.txt
-    # with open("business_data.txt", 'r') as f:
-    #     business_data = json.loads(f.read())
+    else:
+        # DEBUGGING PURPOSES: Load business_data.txt
+        with open("business_data.txt", 'r') as f:
+            business_data = json.loads(f.read())
 
     print("Business Information:")
     print("Name:", business_data["name"])
