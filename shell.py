@@ -10,18 +10,21 @@ from html import unescape
 import asyncio
 import aiohttp
 
+import os
+import re
 import json
 import time
-import re
 from random import randint
 
-import os
-from api_key import OPENAI_KEY, YELP_FUSION_KEY
+import openai
 from langchain.document_loaders import TextLoader
-from langchain.indexes import VectorstoreIndexCreator
 from langchain.chat_models import ChatOpenAI
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.chains import RetrievalQA
 
-os.environ["OPENAI_API_KEY"] = OPENAI_KEY
+openai.api_key = os.environ.get('OPENAI_API_KEY')
+YELP_FUSION_KEY = os.environ.get('YELP_FUSION_KEY')
 
 DEBUGGING = False
 
@@ -58,19 +61,21 @@ async def fetch_url(session, url):
     Fetch url asynchronously.
     """
     print("REQUESTING", url)
-
+    
     async with session.get(url) as response:
-        # Avoid making high-frequency requests to Yelp -- ethical programming
-        await asyncio.sleep(1)
-
         if response.status == 200:
-            return await response.text()
+            data = await response.text()
+            print("RECEIVED", url)
         else:
             print("ERROR -- STATUS CODE:", response.status)
-            return f"! ERROR REQUESTING {url} !"
+            data = f"! ERROR REQUESTING {url} !"
+    
+    # Decrease request rate
+    await asyncio.sleep(5)
+    return data
 
 
-async def scrape_review_urls(review_urls):
+async def request_review_urls(review_urls):
     """
     Run multiple requests concurrently.
     """
@@ -93,7 +98,7 @@ def scrape_yelp_page(base_url: str, num_pages: int, web_app: bool = False):
     review_urls = [base_url]+[_generate_review_url(base_url, start_value) for start_value in range(10, num_pages*10, 10)]
     
     # Replace review_urls with response objects
-    review_responses = asyncio.run(scrape_review_urls(review_urls))
+    review_responses = asyncio.run(request_review_urls(review_urls))
     print("RESPONSES RECEIVED, PARSING DATA")
 
     # Store information in business_data
@@ -121,17 +126,15 @@ def scrape_yelp_page(base_url: str, num_pages: int, web_app: bool = False):
         else:
             try:
                 # Get source code
-                if not DEBUGGING:
-                    source_code = unidecode(response)
-                    if not web_app:
-                        with open("source_code.txt", 'w') as f:
-                            f.write(source_code)
+                source_code = unidecode(response)
+                if not web_app:
+                    with open("source_code.txt", 'w') as f:
+                        f.write(source_code)
 
                 # DEBUGGING PURPOSES: Use static source_code
-                if DEBUGGING:
-                    source_code = ""
-                    with open("source_code.txt", 'r') as f:
-                        source_code = f.read()
+                # source_code = ""
+                # with open("source_code.txt", 'r') as f:
+                #     source_code = f.read()
                 
                 # Try to extract JSON object
                 start = source_code.index('<!--{"locale"')
@@ -199,7 +202,7 @@ def scrape_yelp_page(base_url: str, num_pages: int, web_app: bool = False):
                         try:
                             rating = yelp_json["legacyProps"]["bizDetailsProps"]["bizDetailsPageProps"]["reviewFeedQueryProps"]["reviews"][i]["rating"]
                             comment = yelp_json["legacyProps"]["bizDetailsProps"]["bizDetailsPageProps"]["reviewFeedQueryProps"]["reviews"][i]["comment"]["text"]
-                            business_data["reviews"][rating].append(clean(comment))
+                            business_data["reviews"][str(rating)].append(clean(comment))
                         except Exception as e:
                             print(f"ERROR RETRIEVING REVIEW #{i}:", e)
                             errors += 1
@@ -296,24 +299,17 @@ def format_business_data(business_data: dict, web_app: bool = False) -> str:
     Formats business_data into a readable text file for training LangChain/ChatGPT.
     """
     # Provide context for chatbot
-    res = "You are QuickYelp, a chatbot which is able to answer questions about a given Yelp business. \n"+ \
-        "The following content provided is the background context of the restaurant, followed by the reviews. \n"+ \
-        "If the answer to their query is not provided within the background context, you may look through the reviews to see if any of them give an answer. \n" + \
-        "If you still do not find the answer, notify them that the information was not provided by the business itself. \n" + \
-        "Please be concise as the point of this chatbot is to get quick AND descriptive information about businesses! \n" + \
-        "Beware: some content is formatted in Python data structures (lists, dicts, etc).\n\n"
+    bg_context = "You are QuickYelp, a chatbot which is able to answer questions about a given Yelp business. \n"+ \
+        "The content provided is the background context/information of the business/restaurant that can be found on the Yelp page. \n"+ \
+        "Beware: some content is formatted in JSON format.\n\n"
+    reviews = "You are QuickYelp, a chatbot which is able to answer questions about a given Yelp business. \n"+ \
+        "The content provided is the reviews of the business/restaurant from the experience of Yelp users who have visited the service.\n" + \
+        "Think of ratings from 4-5 stars as positive, and 1-3 stars as negative.\n\n"
 
     sections = ["name", "history", "specialties", "location", "phone", "categories",
                 "overall_rating", "price_range" , "hours", "transactions"]
-    special = {"specialties", "categories", "hours", "transactions"}
-
-    background_context = "You are provided the following background context:\n"
-    for section in sections:
-        if business_data[section]:
-            background_context += f"- {section}\n"
-    res += background_context+'\n'
-
-    res += "######################## BACKGROUND CONTEXT STARTING ########################\n\n"
+    special = {"specialties", "categories"}
+    bg_context += "You are provided the following information about the business:\n"
 
     # Format business_data sections
     for section in sections:
@@ -323,40 +319,57 @@ def format_business_data(business_data: dict, web_app: bool = False) -> str:
             content = "The price range in dollars/Yelp dollar signs of their items/menu is"
         elif section == "overall_rating":
             content = "The overall rating of the business calculated by Yelp reviews is"
+        elif section == "history":
+            content = "The background history/origin of the business is"
+        elif section == "name":
+            content = "The name/title of the business is"
+        elif section == "location":
+            content = "The business location (address, city, state, country) is listed as"
+        elif section == "hours":
+            content = "The hours of operation are"
+        elif section == "transactions":
+            content = "The transaction methods the business offers are"
+        elif section == "phone":
+            content = "The contact/phone number is"
         else:
             content = f"The {section} is"
 
         if business_data[section]:
-            content += f": {business_data[section]}"
-
             if section == "hours":
-                content += ", and the business is "
+                content += f": {business_data[section]} (formatted in JSON)."
                 if business_data["is_open_now"]:
-                    content += "open right now."
+                    content += "The business is open right now."
                 else:
-                    content += "not open right now."
+                    content += "The business is not open right now."
+            else:
+                content += f": \"{business_data[section]}\"."
         else:
-            content += f" not provided by the business. If the user prompts for this data, alert them to report this error to jzulfika@uci.edu if the issue persists."
+            content += f" not provided by the business."
         
-        res += content+"\n\n"
-    
-    # Format reviews
-    res += "######################## BACKGROUND CONTEXT DONE -- MOVING TO REVIEWS ########################\n\n"
-    res += "The reviews will now be provided. They will be presented in the format of a Python list. Think of ratings from 3-5 stars as positive, and 1-2 stars as negative.\n\n"
-    if len(business_data["reviews"]):
-        for rating in business_data["reviews"].keys():
-            content = f"Here are the reviews which rated the business {rating} stars: {business_data['reviews'][rating]}\n\n"
-            res += content
-    else:
-        res += "The reviews are not provided at all. This means the user either chose to scrape 0 pages OR there is a vital issue with the program. " + \
-            "Notify the user that they should report this error to jzulfika@uci.edu if they did not select 0 pages, as this is a MAJOR error!"
+        bg_context += content+'\n'
+    bg_context += '\n\n'
 
-    # Write into file
-    if not web_app:
-        with open("formatted_data.txt", 'w') as f:
-            f.write(res)
+    # Format reviews
+    if len(business_data["reviews"]):
+        review_count = 1
+        for rating in ['5', '4', '3', '2', '1']:
+            if rating in business_data["reviews"].keys():
+                content = ""
+                for review in business_data['reviews'][rating]:
+                    content += f'{rating} Stars ({"Positive" if int(rating) > 3 else "Negative"}) - Review {review_count}: {review}\n'
+                    review_count += 1
+                reviews += content
     else:
-        return res
+        reviews += "The reviews are not provided at all. This is a MAJOR error!"
+
+    # Write into files
+    if not web_app:
+        with open("business_information.txt", 'w') as f:
+            f.write(unidecode(bg_context))
+        with open("business_reviews.txt", 'w') as f:
+            f.write(unidecode(reviews))
+    else:
+        return bg_context, reviews
 
 
 def validate_url(url):
@@ -459,18 +472,50 @@ if __name__ == "__main__":
     
     # Format business_data
     format_business_data(business_data)
-    with open("formatted_data.txt", 'r') as f:
-        formatted_content = f.read()
-    
-    # LangChain initiation using TextLoader and VectorstoreIndexCreator
-    loader = TextLoader("formatted_data.txt")
-    index = VectorstoreIndexCreator().from_loaders([loader])
+    with open("business_information.txt", 'r') as f:
+        business_information = f.read()
+    with open("business_reviews.txt", 'r') as f:
+        business_reviews = f.read()
+
+    # Create FAISS database
+    info_loader = TextLoader("business_information.txt")
+    review_loader = TextLoader("business_reviews.txt")
+    info_docs = info_loader.load_and_split()
+    review_docs = review_loader.load_and_split()
+    info_db = FAISS.from_documents(info_docs, embedding=OpenAIEmbeddings())
+    review_db = FAISS.from_documents(review_docs, embedding=OpenAIEmbeddings())
 
     # Initiate ChatBot
     while True:
         query = input("Ask a question about the business (Q to quit): ")
         if query == 'Q': break
-        res = index.query(query, llm=ChatOpenAI())
+
+        # Query using LangChain's RetrievalQA
+        start = time.perf_counter()
+        info_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0.5), chain_type="stuff", retriever=info_db.as_retriever())
+        review_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0.5), chain_type="stuff", retriever=review_db.as_retriever())
+        end = time.perf_counter()
+        print("Elapsed time to load db: ", end-start)
+        start = time.perf_counter()
+        res_1 = info_qa.run(query)
+        res_2 = review_qa.run(query)
+        merge_request = {
+            "role": "system", 
+                 "content": f"Please merge these two chatbot replies to answer the query: {query}\n\n" + \
+                        f"Reply 1 (Based on Yelp's business information): {res_1}\n\n" + \
+                        f"Reply 2 (Based on Yelp reviews): {res_2}\n\n" + \
+                        "If either reply says they do not know the answer, please disregard it.\n" + \
+                        "If both replies do not know the answer, please say either message."
+        }
+        llm = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo", 
+            temperature=0.5, 
+            messages=[merge_request]
+        )
+        res = llm.choices[0].message.content
+        end = time.perf_counter()
+        print("Elapsed time to query: ", end-start)
+        
         print(res)
         print('-'*100)
 

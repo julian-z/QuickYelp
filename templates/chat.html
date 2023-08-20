@@ -12,6 +12,23 @@
 <body>
     <div id="react-chat"></div>
 
+    <script>
+        // Event listener for cleaning up tempfiles
+        window.addEventListener("beforeunload", async () => {
+            try {
+                const response = await fetch('/cleanup', {
+                    method: 'POST'
+                });
+        
+                if (!response.ok) {
+                    console.error("CLEANUP REQUEST FAILED FROM JS");
+                }
+            } catch (error) {
+                console.error("CLEANUP REQUEST ERROR FROM JS:", error);
+            }
+        });
+    </script>
+
     <script type="text/babel">
         // Inherit React component
         class ChatApp extends React.Component {

@@ -23,8 +23,8 @@
                 {{ form.hidden_tag() }}
                 <label for="{{ form.url.id }}">Yelp URL:</label>
                 {{ form.url(class="form-control", autocomplete="off", placeholder="https://www.yelp.com/biz/...") }}<br>
-                <label for="num_pages">How Many Pages of Reviews Should I Scan? (0-5):</label>
-                <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required placeholder="Maximum of 5 Pages..."><br>
+                <!-- <label for="num_pages">How Many Pages of Reviews Should I Scan? (0-5):</label>
+                <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required placeholder="Maximum of 5 Pages..."><br> -->
                 <input type="submit" value="Start Chat">
             </form>
 
@@ -43,9 +43,27 @@
                 <a href="{{ sample_link }}" style="color: rgb(0, 136, 255); font-weight: lighter;">{{sample_link}}</a>
             </p><br>
 
-            <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
+            <!-- <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
                 {{ "❓ To put it simply, it takes more time to retrieve data from more pages. If you're looking for a quick overview, we recommend putting a lower number of pages!" }}
-            </p><br>
+            </p><br> -->
+
+            <br>
+                <p class="chatbot-message" style="width: 100%; max-width: 100%; overflow: auto;">
+                    🔍 What is QuickYelp?<br>
+                    <em style="font-weight: lighter">
+                        QuickYelp is a dynamic AI chatbot which scans through the reviews of a given Yelp business, then answers questions based on its training data. 
+                        With this program, users are able to save a ton of time from having to manually read through the reviews themselves. 
+                        Thus, our goal is to offer an easy and efficient way to retrieve a quick overview of a restaurant, as well as answer questions to the best of its ability.
+                    </em><br><br>
+
+                    🔍 How does it work?<br>
+                    <em style="font-weight: lighter">
+                        The application uses three main technologies: the Yelp Fusion API, the OpenAI API, and the LangChain API. To put it simply, Yelp Fusion is utilized
+                        to retrieve data, while LangChain allows us to train OpenAI's ChatGPT language model using the data we have. To read more, you may visit the
+                        GitHub repo here: <a href="https://github.com/julian-z/QuickYelp" style="color: rgb(0, 136, 255); font-weight: lighter; font-style: normal;">QuickYelp</a>
+                    </em>
+                </p>
+            <br>
         </div>
     </div>
 
@@ -63,8 +81,8 @@
                 loadingAnimation.className = "loading-animation";
                 chatbotMessage.appendChild(loadingAnimation);
 
-                const num_pages = parseInt(document.querySelector("input[name='num_pages']").value);
-                const estimatedTime = 8;
+                // const num_pages = parseInt(document.querySelector("input[name='num_pages']").value);
+                const estimatedTime = 16;
                 let elapsedSeconds = 0;
                 const elapsedTimeInterval = setInterval(() => {
                     elapsedSeconds++;
