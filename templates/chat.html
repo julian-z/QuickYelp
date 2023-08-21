@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>QuickYelp - Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='outputs.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
@@ -102,7 +103,7 @@
                             chatHistory: [
                                 ...prevState.chatHistory.slice(0, -2),
                                 "USR" + userQuery,
-                                "BOT❌ Notice: Rate limit of requests has been exceeded (5 per minute, 100 per day). Please try later or slow down incoming requests.",
+                                "BOT❌ Notice: You are sending requests too fast! Please wait at least 1 minute before sending your next request. This cooldown is applied to avoid spam abuse of the website.",
                             ],
                             query: "",
                             waiting: false,

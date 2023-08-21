@@ -70,8 +70,6 @@ async def fetch_url(session, url):
             print("ERROR -- STATUS CODE:", response.status)
             data = f"! ERROR REQUESTING {url} !"
     
-    # Decrease request rate
-    await asyncio.sleep(5)
     return data
 
 
@@ -80,11 +78,12 @@ async def request_review_urls(review_urls):
     Run multiple requests concurrently.
     """
     async with aiohttp.ClientSession() as session:
-        tasks = []
+        results = []
         for url in review_urls:
-            task = asyncio.create_task(fetch_url(session, url))
-            tasks.append(task)
-        return await asyncio.gather(*tasks)
+            data = await fetch_url(session, url)
+            results.append(data)
+            await asyncio.sleep(5)
+        return results
 
 
 def scrape_yelp_page(base_url: str, num_pages: int, web_app: bool = False):

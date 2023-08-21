@@ -3,8 +3,7 @@
 # Flask implementation.
 
 from flask import Flask, render_template, request, jsonify, session
-from flask_limiter import Limiter, RateLimitExceeded
-from flask_limiter.util import get_remote_address
+from utilities import get_unique_uid
 from censored_words import wordset
 from flask_session import Session
 from urllib.parse import urlparse
@@ -27,7 +26,7 @@ from shell import validate_url, scrape_yelp_page, format_business_data
 
 app = Flask(__name__)
 
-# Local Setup: Uncomment this to test locally (Start Redis server in Ubuntu)
+# DEVELOPMENT: Uncomment this to test locally (Start Redis server in Ubuntu and set API env vars)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['SESSION_TYPE'] = 'redis'
@@ -36,9 +35,8 @@ app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_KEY_PREFIX'] = 'QuickYelp:'
 app.config['SESSION_REDIS'] = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 Session(app)
-limiter = Limiter(get_remote_address, app=app, storage_uri="memory://")
 
-# # Production Setup: Uncomment this to test production
+# # PRODUCTION (1): Uncomment this for deployment environment
 # app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 # redis_url = urlparse(os.environ.get("REDIS_URL"))
 # app.config['SESSION_TYPE'] = 'redis'
@@ -48,12 +46,8 @@ limiter = Limiter(get_remote_address, app=app, storage_uri="memory://")
 # app.config['SESSION_KEY_PREFIX'] = 'quickyelp:'
 # app.config['SESSION_REDIS'] = redis_client = redis.Redis(host=redis_url.hostname, port=redis_url.port, password=redis_url.password, ssl=True, ssl_cert_reqs=None)
 # Session(app)
-# limiter = Limiter(get_remote_address, app=app, storage_uri=os.environ.get("REDIS_URL"), storage_options={"socket_connect_timeout": 30, "ssl_cert_reqs": None}, strategy="fixed-window")
 
 DEBUGGING = False # Avoid utilizing Yelp Fusion and OpenAI
-RATE_LIMIT_SEC = '1'
-RATE_LIMIT_MIN = '5'
-RATE_LIMIT_DAY = '100'
 AI_REPLIES = [
     "Oops! It seems like the Yelp URL you entered is not valid. Please try again.",
     "Sorry, but the Yelp URL you provided is incorrect or unsupported. Please double-check and retry.",
@@ -79,15 +73,25 @@ SAMPLE_LINKS = [
 ]
 
 
-@limiter.limit(f"{RATE_LIMIT_SEC}/second")
-@limiter.limit(f"{RATE_LIMIT_MIN}/minute")
-@limiter.limit(f"{RATE_LIMIT_DAY}/day")
 @app.route("/", methods=["GET", "POST"])
 def index():
     global DEBUGGING, AI_REPLIES, SAMPLE_LINKS
     chat_history = []
 
+    # # PRODUCTION (2): Rate limiting
+    # uid = get_unique_uid(request)
+    # cur_rate = redis_client.get(uid)
+    # if cur_rate and int(cur_rate) >= 5:
+    #     return handle_rate_limit_error()
+
     if request.method == "POST":
+
+        # # PRODUCTION (3): Rate limiting
+        # if not redis_client.exists(uid):
+        #     redis_client.setex(uid, 60, 1)
+        # else:
+        #     redis_client.incr(uid)
+        #     redis_client.expire(uid, 60)
 
         # Handle URL/Number popup
         if "url" in request.form:
@@ -144,14 +148,14 @@ def index():
                             print("ERROR TRYING TO CLEAN UP TEMPFILES", e)
 
                     except Exception as e:
-                        initial_response = "❌ Notice: Data retrieval has failed, chat has possibly exceeded the 10 minute time limit. Please return to the homepage and try again."
+                        initial_response = "❌ Notice: Data retrieval has failed. Please return to the homepage and try again."
                         print(repr(e))
                 else:
                     print("MOCKING SCRAPING")
                     import time
                     for i in range(num_pages):
                         print("SCRAPING PAGE", i+1)
-                        time.sleep(6.5)
+                        # time.sleep(6.5)
                     print("MOCK SCRAPE DONE")
                     business_data = {
                         "name": random.choice(["Restaurant", None]), 
@@ -194,7 +198,7 @@ def index():
                         info_db = session.get('info_db')
                         review_db = session.get('review_db')
                         if not info_db or not review_db:
-                            chatbot_reply = "❌ Notice: Chatbot data has failed to load. Please return to the homepage and try again."
+                            chatbot_reply = "❌ Notice: Chatbot data has failed to load, the chat may have reached its 10 minute time limit. Please return to the homepage and try again. To read why this time limit is in place, read via the popup on the homepage."
                             if not info_db:
                                 print("INFO_DB NOT FOUND IN SESSION")
                             if not review_db:
@@ -225,7 +229,7 @@ def index():
                                 )
                                 chatbot_reply = llm.choices[0].message.content
                             except Exception as e:
-                                chatbot_reply = "❌ Notice: Chatbot has failed to query. Please try again."
+                                chatbot_reply = "❌ Notice: Chatbot has failed to query, the chat may have reached its 10 minute time limit. Please return to the homepage and try again. To read why this time limit is in place, read via the popup on the homepage."
                                 print(repr(e))
                         
                     else:
@@ -251,7 +255,7 @@ def index():
         if session.get('review_db'):
             session.pop('review_db')
         
-        # # Production: Uncomment this for production, keep commented if testing locally
+        # # PRODUCTION (3): Uncomment this for deployment, keep commented if testing locally
         # if redis_client:
         #     if redis_client.exists('info_db'):
         #         redis_client.delete('info_db')
@@ -265,9 +269,8 @@ def index():
     return render_template("index.html", error_message="", sample_link=SAMPLE_LINKS[random.randint(0, len(SAMPLE_LINKS)-1)])
 
 
-@app.errorhandler(RateLimitExceeded)
-def handle_rate_limit_error(e):
-    error_message = f"❌ Notice: Rate limit of requests has been exceeded ({RATE_LIMIT_MIN} per minute, {RATE_LIMIT_DAY} per day). Please try later or slow down incoming requests."
+def handle_rate_limit_error():
+    error_message = "❌ Notice: You are sending requests too fast! Please wait at least 1 minute before sending your next request. This cooldown is applied to avoid spam abuse of the website."
 
     if request.method == "POST":
         if "url" in request.form:
@@ -306,7 +309,7 @@ def cleanup():
         if session.get('review_db'):
             session.pop('review_db')
         
-        # # Production: Uncomment this for production, keep commented if testing locally
+        # # PRODUCTION (4): Uncomment this for deployment, keep commented if testing locally
         # if redis_client:
         #     if redis_client.exists('info_db'):
         #         redis_client.delete('info_db')
@@ -351,5 +354,5 @@ def craft_initial_response(business_data: dict) -> str:
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
 

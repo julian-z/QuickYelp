@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>QuickYelp - Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='outputs.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
@@ -24,7 +25,7 @@
                 <input type="text" name="url" autocomplete="off" required placeholder="https://www.yelp.com/biz/..."><br>
                 <!-- <label for="num_pages">How Many Pages of Reviews Should I Scan? (0-5):</label>
                 <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br> -->
-                <input type="submit" value="Start Chat">
+                <input type="submit" value="Start Scan (Estimated 20 Seconds)">
             </form>
 
             {% if error_message != "" %}
@@ -80,6 +81,13 @@
                     <em style="font-weight: lighter">
                         As of 8/20/2023, the user is not able to save their conversation with the chatbot. The data is stored temporarily and is deleted after 10 minutes
                         to optimize performance for users as well as be mindful of Yelp Fusion's data.
+                    </em><br><br>
+
+                    🔍 Why is there a 10 minute limit on chats?<br>
+                    <em style="font-weight: lighter">
+                        Each chat session takes up around 2 MB of storage due to the intensity of the FAISS indexes used to query the chatbot. In order to provide the most
+                        swift user experience possible, we only allow data to be stored for 10 minutes. As mentioned above, this is also due to the data being utilized belonging
+                        to Yelp & their Fusion API.
                     </em>
                 </p>
             <br>
@@ -101,7 +109,7 @@
                 chatbotMessage.appendChild(loadingAnimation);
 
                 // const num_pages = parseInt(document.querySelector("input[name='num_pages']").value);
-                const estimatedTime = 13;
+                const estimatedTime = 20;
                 let elapsedSeconds = 0;
                 const elapsedTimeInterval = setInterval(() => {
                     elapsedSeconds++;
@@ -148,73 +156,73 @@
 
             // Toggle the About section
             toggleAboutSection = () => {
-                this.setState((prevState) => ({
-                    about: !prevState.about,
-                }));
+                // this.setState((prevState) => ({
+                //     about: !prevState.about,
+                // }));
             };
     
 
             // Handle asynchronous calls to Flask
             handleSubmit = async (event) => {
-                event.preventDefault();
+                // event.preventDefault();
 
-                const formData = new FormData(event.target);
-                const userQuery = formData.get("query");
+                // const formData = new FormData(event.target);
+                // const userQuery = formData.get("query");
 
-                try {
-                    // Display the user's query in the chat history
-                    this.setState((prevState) => ({
-                        chatHistory: [...prevState.chatHistory, "USR" + userQuery, "BOTLOADING"],
-                        query: "",
-                        waiting: true,
-                    }), () => {
-                            // Scroll the chat log container to the bottom
-                            this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
-                    });
+                // try {
+                //     // Display the user's query in the chat history
+                //     this.setState((prevState) => ({
+                //         chatHistory: [...prevState.chatHistory, "USR" + userQuery, "BOTLOADING"],
+                //         query: "",
+                //         waiting: true,
+                //     }), () => {
+                //             // Scroll the chat log container to the bottom
+                //             this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
+                //     });
 
-                    const response = await fetch("/", {
-                        method: "POST",
-                        body: formData,
-                    });
+                //     const response = await fetch("/", {
+                //         method: "POST",
+                //         body: formData,
+                //     });
 
-                    if (response.ok) {
-                        const data = await response.json();
-                        const chatbotReply = data.chatbot_reply;
+                //     if (response.ok) {
+                //         const data = await response.json();
+                //         const chatbotReply = data.chatbot_reply;
 
-                        // Replace the user's query with the chatbot's reply
-                        // - This allows the user to see the query that is being processed rather
-                        //   than delaying it until we receive OpenAI's response
-                        this.setState((prevState) => ({
-                            chatHistory: [
-                                ...prevState.chatHistory.slice(0, -2),
-                                "USR" + userQuery,
-                                "BOT" + chatbotReply,
-                            ],
-                            query: "",
-                            waiting: false,
-                        }), () => {
-                            // Scroll the chat log container to the bottom
-                            this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
-                        });
-                    }
-                } catch (error) {
-                    console.error(error);
-                }
+                //         // Replace the user's query with the chatbot's reply
+                //         // - This allows the user to see the query that is being processed rather
+                //         //   than delaying it until we receive OpenAI's response
+                //         this.setState((prevState) => ({
+                //             chatHistory: [
+                //                 ...prevState.chatHistory.slice(0, -2),
+                //                 "USR" + userQuery,
+                //                 "BOT" + chatbotReply,
+                //             ],
+                //             query: "",
+                //             waiting: false,
+                //         }), () => {
+                //             // Scroll the chat log container to the bottom
+                //             this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
+                //         });
+                //     }
+                // } catch (error) {
+                //     console.error(error);
+                // }
             };
 
 
             // Update "query" when user types
             handleInputChange = (event) => {
-                this.setState({ query: event.target.value });
+                // this.setState({ query: event.target.value });
             };
 
 
             // Submit on "enter" button
             handleTextareaKeyDown = (event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    this.handleSubmit(event);
-                }
+                // if (event.key === "Enter" && !event.shiftKey) {
+                //     event.preventDefault();
+                //     this.handleSubmit(event);
+                // }
             };
 
 
