@@ -16,6 +16,7 @@ We leverage Yelp Fusion to retrieve data related to the business in question. Fo
 Once a user submits a query through LangChain's RetrievalQA chain, the query goes through two FAISS (Facebook AI Similarity Search) indexes:
 - Index containing the Yelp business information (name, phone, hours, etc)
 - Index containing the Yelp business reviews (ordered by Yelp Sort)
+
 Both chatbot replies are received, then fed once more to OpenAI's GPT-3.5 language model. The replies are merged together to form a reply based on the provided information as well as the context found in user reviews, in order to return the most relevant reply possible.
 
 ![](https://github.com/julian-z/QuickYelp/blob/main/static/images/query.gif)
