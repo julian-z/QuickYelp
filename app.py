@@ -3,14 +3,12 @@
 # Flask implementation.
 
 from flask import Flask, render_template, request, jsonify, session
-from flask_wtf import FlaskForm
-from wtforms import StringField
-from wtforms.validators import DataRequired, URL
-from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter, RateLimitExceeded
 from flask_limiter.util import get_remote_address
 from censored_words import wordset
 from flask_session import Session
+from urllib.parse import urlparse
+from datetime import timedelta
 import redis
 
 import bleach
@@ -28,9 +26,9 @@ from langchain.chains import RetrievalQA
 from shell import validate_url, scrape_yelp_page, format_business_data
 
 app = Flask(__name__)
-csrf = CSRFProtect(app)
-limiter = Limiter(get_remote_address, app=app, storage_uri="memory://") # TO-DO: Configure storage when deployed
 
+# Local Setup: Uncomment this to test locally (Start Redis server in Ubuntu)
+app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = False
@@ -38,10 +36,24 @@ app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_KEY_PREFIX'] = 'QuickYelp:'
 app.config['SESSION_REDIS'] = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 Session(app)
+limiter = Limiter(get_remote_address, app=app, storage_uri="memory://")
+
+# # Production Setup: Uncomment this to test production
+# app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+# redis_url = urlparse(os.environ.get("REDIS_URL"))
+# app.config['SESSION_TYPE'] = 'redis'
+# app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=10)
+# app.config['SESSION_PERMANENT'] = True
+# app.config['SESSION_USE_SIGNER'] = True
+# app.config['SESSION_KEY_PREFIX'] = 'quickyelp:'
+# app.config['SESSION_REDIS'] = redis_client = redis.Redis(host=redis_url.hostname, port=redis_url.port, password=redis_url.password, ssl=True, ssl_cert_reqs=None)
+# Session(app)
+# limiter = Limiter(get_remote_address, app=app, storage_uri=os.environ.get("REDIS_URL"), storage_options={"socket_connect_timeout": 30, "ssl_cert_reqs": None}, strategy="fixed-window")
 
 DEBUGGING = False # Avoid utilizing Yelp Fusion and OpenAI
-RATE_LIMIT_MIN = '8'
-RATE_LIMIT_DAY = '150'
+RATE_LIMIT_SEC = '1'
+RATE_LIMIT_MIN = '5'
+RATE_LIMIT_DAY = '100'
 AI_REPLIES = [
     "Oops! It seems like the Yelp URL you entered is not valid. Please try again.",
     "Sorry, but the Yelp URL you provided is incorrect or unsupported. Please double-check and retry.",
@@ -67,13 +79,10 @@ SAMPLE_LINKS = [
 ]
 
 
-class URLForm(FlaskForm):
-    url = StringField('Yelp URL', validators=[DataRequired(), URL()])
-
-
-@app.route("/", methods=["GET", "POST"])
+@limiter.limit(f"{RATE_LIMIT_SEC}/second")
 @limiter.limit(f"{RATE_LIMIT_MIN}/minute")
 @limiter.limit(f"{RATE_LIMIT_DAY}/day")
+@app.route("/", methods=["GET", "POST"])
 def index():
     global DEBUGGING, AI_REPLIES, SAMPLE_LINKS
     chat_history = []
@@ -82,92 +91,85 @@ def index():
 
         # Handle URL/Number popup
         if "url" in request.form:
-            # Utilize Flask-WTF for security precautions
-            url_form = URLForm(request.form)
-            if url_form.validate_on_submit():
-                # Initial form submission for starting the chatbot
-                url = request.form.get("url")
-                num_pages = 5
+            # Initial form submission for starting the chatbot
+            url = request.form.get("url")
+            num_pages = 2
 
-                # Re-prompt user if url or num_pages is not valid
-                if not validate_url(url):
-                    return render_template("index.html", error_message=AI_REPLIES[random.randint(0, len(AI_REPLIES)-1)], sample_link=SAMPLE_LINKS[random.randint(0, len(SAMPLE_LINKS)-1)], form=url_form)
+            # Re-prompt user if url or num_pages is not valid
+            if not validate_url(url):
+                return render_template("index.html", error_message=AI_REPLIES[random.randint(0, len(AI_REPLIES)-1)], sample_link=SAMPLE_LINKS[random.randint(0, len(SAMPLE_LINKS)-1)])
 
-                # Perform data scraping here using the provided URL and num_pages
-                else:
-                    initial_response = None
+            # Perform data scraping here using the provided URL and num_pages
+            else:
+                initial_response = None
 
-                    if not DEBUGGING:             
-                        business_data = scrape_yelp_page(url, num_pages, web_app=True)
-                        business_info, business_reviews = format_business_data(business_data, web_app=True)
-                        info_temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
-                        review_temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
-                        with info_temp_file as f:
-                            f.write(business_info)
-                            # DEBUGGING PURPOSES: See what data the chatbot is trained on
-                            # with open("webapp_data_info.txt", 'w') as f:
-                            #     f.write(business_info)
+                if not DEBUGGING:             
+                    business_data = scrape_yelp_page(url, num_pages, web_app=True)
+                    business_info, business_reviews = format_business_data(business_data, web_app=True)
+                    info_temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
+                    review_temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
+                    with info_temp_file as f:
+                        f.write(business_info)
+                        # DEBUGGING PURPOSES: See what data the chatbot is trained on
+                        # with open("webapp_data_info.txt", 'w') as f:
+                        #     f.write(business_info)
 
-                        with review_temp_file as f:
-                            f.write(business_reviews)
-                            # DEBUGGING PURPOSES: See what data the chatbot is trained on
-                            # with open("webapp_data_rev.txt", 'w') as f:
-                            #     f.write(business_reviews)
+                    with review_temp_file as f:
+                        f.write(business_reviews)
+                        # DEBUGGING PURPOSES: See what data the chatbot is trained on
+                        # with open("webapp_data_rev.txt", 'w') as f:
+                        #     f.write(business_reviews)
+
+                    try:
+                        # Initiate FAISS indexes to utilize for querying
+                        info_path = info_temp_file.name
+                        review_path = review_temp_file.name
+                        info_loader = TextLoader(info_path)
+                        review_loader = TextLoader(review_path)
+                        info_docs = info_loader.load_and_split()
+                        review_docs = review_loader.load_and_split()
+                        info_db = FAISS.from_documents(info_docs, embedding=OpenAIEmbeddings())
+                        review_db = FAISS.from_documents(review_docs, embedding=OpenAIEmbeddings())
+
+                        print("STORING INFO_DB IN SESSION")
+                        session['info_db'] = info_db.serialize_to_bytes()
+                        print("STORING REVIEW_DB IN SESSION")
+                        session['review_db'] = review_db.serialize_to_bytes()
 
                         try:
-                            # Initiate FAISS indexes to utilize for querying
-                            info_path = info_temp_file.name
-                            review_path = review_temp_file.name
-                            info_loader = TextLoader(info_path)
-                            review_loader = TextLoader(review_path)
-                            info_docs = info_loader.load_and_split()
-                            review_docs = review_loader.load_and_split()
-                            info_db = FAISS.from_documents(info_docs, embedding=OpenAIEmbeddings())
-                            review_db = FAISS.from_documents(review_docs, embedding=OpenAIEmbeddings())
-
-                            print("STORING INFO_DB IN SESSION")
-                            session['info_db'] = info_db.serialize_to_bytes()
-                            print("STORING REVIEW_DB IN SESSION")
-                            session['review_db'] = review_db.serialize_to_bytes()
-
-                            try:
-                                print("TRYING TO CLEAN UP TEMPFILES")
-                                os.remove(info_path)
-                                os.remove(review_path)
-                            except Exception as e:
-                                print("ERROR TRYING TO CLEAN UP TEMPFILES", e)
-
+                            print("TRYING TO CLEAN UP TEMPFILES")
+                            os.remove(info_path)
+                            os.remove(review_path)
                         except Exception as e:
-                            initial_response = "❌ Notice: Data retrieval has failed. Please return to the homepage and try again."
-                            print(repr(e))
-                            raise e
-                    else:
-                        print("MOCKING SCRAPING")
-                        import time
-                        for i in range(num_pages):
-                            print("SCRAPING PAGE", i+1)
-                            time.sleep(6.5)
-                        print("MOCK SCRAPE DONE")
-                        business_data = {
-                            "name": random.choice(["Restaurant", None]), 
-                            "history": random.choice(["History", None]),
-                            "specialties": random.choice(["Specialties", None]),
-                            "location": random.choice(["Restaurant", None]),
-                            "phone": random.choice(["123-456-7890", None]),
-                            "categories": random.choice([["Food"], None]),
-                            "overall_rating": random.choice(["5.0", None]),
-                            "price_range": random.choice(["Money", None]),
-                            "hours": random.choice([["Open"], None]),
-                            "is_open_now": random.choice([True, None]),
-                            "transactions": random.choice(["Transactions", None]),
-                            "reviews": {'5': ["Great!"], '4': ["Good!"], '3': ["Decent."]}
-                        }
+                            print("ERROR TRYING TO CLEAN UP TEMPFILES", e)
 
-                    initial_response = craft_initial_response(business_data) if not initial_response else initial_response
-                    return render_template("chat.html", initial_response=initial_response)
-            
-            else:
-                return render_template("index.html", error_message=AI_REPLIES[random.randint(0, len(AI_REPLIES)-1)], sample_link=SAMPLE_LINKS[random.randint(0, len(SAMPLE_LINKS)-1)], form=url_form)
+                    except Exception as e:
+                        initial_response = "❌ Notice: Data retrieval has failed, chat has possibly exceeded the 10 minute time limit. Please return to the homepage and try again."
+                        print(repr(e))
+                else:
+                    print("MOCKING SCRAPING")
+                    import time
+                    for i in range(num_pages):
+                        print("SCRAPING PAGE", i+1)
+                        time.sleep(6.5)
+                    print("MOCK SCRAPE DONE")
+                    business_data = {
+                        "name": random.choice(["Restaurant", None]), 
+                        "history": random.choice(["History", None]),
+                        "specialties": random.choice(["Specialties", None]),
+                        "location": random.choice(["Restaurant", None]),
+                        "phone": random.choice(["123-456-7890", None]),
+                        "categories": random.choice([["Food"], None]),
+                        "overall_rating": random.choice(["5.0", None]),
+                        "price_range": random.choice(["Money", None]),
+                        "hours": random.choice([["Open"], None]),
+                        "is_open_now": random.choice([True, None]),
+                        "transactions": random.choice(["Transactions", None]),
+                        "reviews": {'5': ["Great!"], '4': ["Good!"], '3': ["Decent."]}
+                    }
+
+                initial_response = craft_initial_response(business_data) if not initial_response else initial_response
+                return render_template("chat.html", initial_response=initial_response)
         
         # Handle chatbot queries
         else:
@@ -248,22 +250,31 @@ def index():
             session.pop('info_db')
         if session.get('review_db'):
             session.pop('review_db')
+        
+        # # Production: Uncomment this for production, keep commented if testing locally
+        # if redis_client:
+        #     if redis_client.exists('info_db'):
+        #         redis_client.delete('info_db')
+        #     if redis_client.exists('review_db'):
+        #         redis_client.delete('review_db')
     except Exception as e:
         print("ERROR REMOVING DATABASES FROM SESSION", e)
+        raise e
     else:
         print("CLEANUP SUCCESS")
-    url_form = URLForm(request.form)
-    return render_template("index.html", error_message="", sample_link=SAMPLE_LINKS[random.randint(0, len(SAMPLE_LINKS)-1)], form=url_form)
+    return render_template("index.html", error_message="", sample_link=SAMPLE_LINKS[random.randint(0, len(SAMPLE_LINKS)-1)])
 
 
 @app.errorhandler(RateLimitExceeded)
 def handle_rate_limit_error(e):
-    error_message = f"❌ Notice: Rate limit of requests has been exceeded ({RATE_LIMIT_MIN} links per minute, {RATE_LIMIT_DAY} per day). Please try later or slow down incoming requests."
+    error_message = f"❌ Notice: Rate limit of requests has been exceeded ({RATE_LIMIT_MIN} per minute, {RATE_LIMIT_DAY} per day). Please try later or slow down incoming requests."
 
     if request.method == "POST":
-        if "url" in request.form and "num_pages" in request.form:
-            return render_template("index.html", error_message=error_message, sample_link=random.choice(SAMPLE_LINKS), form=URLForm(request.form))
+        if "url" in request.form:
+            print("RATE LIMIT EXCEEDED IN POPUP")
+            return render_template("index.html", error_message=error_message, sample_link=random.choice(SAMPLE_LINKS))
         else:
+            print("RATE LIMIT EXCEEDED IN CHAT")
             query = request.form.get("query")
 
             if len(query) <= 200:
@@ -279,7 +290,8 @@ def handle_rate_limit_error(e):
             chat_history.append("BOT" + error_message)
             return jsonify({"sanitized_user_query": query, "chat_history": chat_history, "chatbot_reply": error_message})
 
-    return render_template("index.html", error_message=error_message, sample_link=random.choice(SAMPLE_LINKS), form=URLForm(request.form))
+    print("RATE LIMIT EXCEEDED IN POPUP")
+    return render_template("index.html", error_message=error_message, sample_link=random.choice(SAMPLE_LINKS))
 
 
 @app.route("/cleanup", methods=["POST"])
@@ -293,8 +305,16 @@ def cleanup():
             session.pop('info_db')
         if session.get('review_db'):
             session.pop('review_db')
+        
+        # # Production: Uncomment this for production, keep commented if testing locally
+        # if redis_client:
+        #     if redis_client.exists('info_db'):
+        #         redis_client.delete('info_db')
+        #     if redis_client.exists('review_db'):
+        #         redis_client.delete('review_db')
     except Exception as e:
         print("ERROR REMOVING DATABASES FROM SESSION", e)
+        raise e
     else:
         print("CLEANUP SUCCESS")
 

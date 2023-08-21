@@ -13,7 +13,7 @@
     <div id="react-chat"></div>
 
     <script>
-        // Event listener for cleaning up tempfiles
+        // Event listener for cleaning up tempfiles/Redis
         window.addEventListener("beforeunload", async () => {
             try {
                 const response = await fetch('/cleanup', {
@@ -102,7 +102,7 @@
                             chatHistory: [
                                 ...prevState.chatHistory.slice(0, -2),
                                 "USR" + userQuery,
-                                "BOT❌ Notice: Rate limit of requests has been exceeded (8 messages per minute, 100 per day). Please try later or slow down incoming requests.",
+                                "BOT❌ Notice: Rate limit of requests has been exceeded (5 per minute, 100 per day). Please try later or slow down incoming requests.",
                             ],
                             query: "",
                             waiting: false,
@@ -178,7 +178,6 @@
                         
                         <div className="query-bar">
                             <form id="chat-form" onSubmit={this.handleSubmit}>
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <input
                                     type="text"
                                     name="query"

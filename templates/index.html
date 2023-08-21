@@ -20,11 +20,10 @@
                 QuickYelp - AI Yelp Review Scanner
             </h2>
             <form method="post">
-                {{ form.hidden_tag() }}
-                <label for="{{ form.url.id }}">Yelp URL:</label>
-                {{ form.url(class="form-control", autocomplete="off", placeholder="https://www.yelp.com/biz/...") }}<br>
+                <label for="url">Yelp URL:</label>
+                <input type="text" name="url" autocomplete="off" required placeholder="https://www.yelp.com/biz/..."><br>
                 <!-- <label for="num_pages">How Many Pages of Reviews Should I Scan? (0-5):</label>
-                <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required placeholder="Maximum of 5 Pages..."><br> -->
+                <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br> -->
                 <input type="submit" value="Start Chat">
             </form>
 
@@ -60,7 +59,27 @@
                     <em style="font-weight: lighter">
                         The application uses three main technologies: the Yelp Fusion API, the OpenAI API, and the LangChain API. To put it simply, Yelp Fusion is utilized
                         to retrieve data, while LangChain allows us to train OpenAI's ChatGPT language model using the data we have. To read more, you may visit the
-                        GitHub repo here: <a href="https://github.com/julian-z/QuickYelp" style="color: rgb(0, 136, 255); font-weight: lighter; font-style: normal;">QuickYelp</a>
+                        GitHub repo here: <a href="https://github.com/julian-z/QuickYelp" style="color: rgb(0, 136, 255);">QuickYelp</a>
+                    </em><br><br>
+
+                    🔍 What can I ask it?<br>
+                    <em style="font-weight: lighter">
+                        You can ask it many questions, the chatbot will try to find the answer based on the information found on its respective Yelp page!
+                        For example, you may ask "What is the price range?" or "What are the hours?". You can even ask "What are some popular dishes?"
+                        and the chatbot will see what dishes are mentioned in the reviews. If the chatbot is ever stumped, it is most likely due to it not being
+                        available on the Yelp website.
+                    </em><br><br>
+
+                    🔍 Is it always correct?<br>
+                    <em style="font-weight: lighter">
+                        As a disclaimer, <strong>no</strong>, the chatbot is not always accurate about what it states. The information used to reply to your query
+                        is based entirely off of what it finds on Yelp, thus, if a review is inaccurate, it may taint the chatbot's perspective.
+                    </em><br><br>
+
+                    🔍 Can I save conversations?<br>
+                    <em style="font-weight: lighter">
+                        As of 8/20/2023, the user is not able to save their conversation with the chatbot. The data is stored temporarily and is deleted after 10 minutes
+                        to optimize performance for users as well as be mindful of Yelp Fusion's data.
                     </em>
                 </p>
             <br>
@@ -82,7 +101,7 @@
                 chatbotMessage.appendChild(loadingAnimation);
 
                 // const num_pages = parseInt(document.querySelector("input[name='num_pages']").value);
-                const estimatedTime = 16;
+                const estimatedTime = 13;
                 let elapsedSeconds = 0;
                 const elapsedTimeInterval = setInterval(() => {
                     elapsedSeconds++;
