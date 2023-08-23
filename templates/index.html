@@ -59,7 +59,7 @@
                     🔍 How does it work?<br>
                     <em style="font-weight: lighter">
                         The application uses three main technologies: the Yelp Fusion API, the OpenAI API, and the LangChain API. To put it simply, Yelp Fusion is utilized
-                        to retrieve data, while LangChain allows us to train OpenAI's ChatGPT language model using the data we have. To read more, you may visit the
+                        to retrieve data, while LangChain allows us to train OpenAI's GPT-3.5 language model using the data we have. To read more, you may visit the
                         GitHub repo here: <a href="https://github.com/julian-z/QuickYelp" style="color: rgb(0, 136, 255);">QuickYelp</a>
                     </em><br><br>
 
@@ -88,6 +88,12 @@
                         Each chat session takes up around 2 MB of storage due to the intensity of the FAISS indexes used to query the chatbot. In order to provide the most
                         swift user experience possible, we only allow data to be stored for 10 minutes. As mentioned above, this is also due to the data being utilized belonging
                         to Yelp & their Fusion API.
+                    </em><br><br>
+
+                    🔍 Is this website affiliated with Yelp?<br>
+                    <em style="font-weight: lighter">
+                        No, this website is not endorsed/affiliated with Yelp. The data being extracted is public information retrieved from Yelp Fusion, as mentioned above.
+                        This website was developed entirely by Julian Zulfikar as a passion project. If any questions arise, the developer's contact information is at the bottom of the GitHub repo.
                     </em>
                 </p>
             <br>
@@ -144,23 +150,31 @@
             constructor(props) {
                 super(props);
                 this.state = {
-                    // chatHistory: ["BOTQuickYelp is an AI ChatBot which scans Yelp reviews. Powered by the Yelp Fusion API and OpenAI. Developed by Julian Zulfikar."],
                     chatHistory: [],
                     query: "",
-                    waiting: false,
+                    waiting: true,
                     about: false,
+                    headerHidden: false,
                 };
                 this.chatLogRef = React.createRef();
             }
 
 
-            // Toggle the About section
+            // Toggle the About section (TO-DO)
             toggleAboutSection = () => {
                 // this.setState((prevState) => ({
                 //     about: !prevState.about,
                 // }));
             };
-    
+
+            // Toggle the Header
+            toggleHeader = () => {
+                // this.setState((prevState) => ({
+                //     about: false,
+                //     headerHidden: !prevState.headerHidden,
+                // }));
+            };
+
 
             // Handle asynchronous calls to Flask
             handleSubmit = async (event) => {
@@ -187,6 +201,7 @@
 
                 //     if (response.ok) {
                 //         const data = await response.json();
+                //         const sanitizedUserQuery = data.sanitized_user_query;
                 //         const chatbotReply = data.chatbot_reply;
 
                 //         // Replace the user's query with the chatbot's reply
@@ -195,8 +210,23 @@
                 //         this.setState((prevState) => ({
                 //             chatHistory: [
                 //                 ...prevState.chatHistory.slice(0, -2),
-                //                 "USR" + userQuery,
+                //                 "USR" + sanitizedUserQuery,
                 //                 "BOT" + chatbotReply,
+                //             ],
+                //             query: "",
+                //             waiting: false,
+                //         }), () => {
+                //             // Scroll the chat log container to the bottom
+                //             this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
+                //         });
+                //     }
+                //     else if (response.status === 429) {
+                //         // Rate limit exceeded (actually handled by handle_rate_limit_error() in app.py but I'll keep it here in case)
+                //         this.setState((prevState) => ({
+                //             chatHistory: [
+                //                 ...prevState.chatHistory.slice(0, -2),
+                //                 "USR" + userQuery,
+                //                 "BOT❌ Notice: You are sending requests too fast! Please wait at least 1 minute before sending your next request. This cooldown is applied to avoid spam abuse of the website.",
                 //             ],
                 //             query: "",
                 //             waiting: false,
@@ -230,9 +260,9 @@
             render() {
                 return (
                     <div id="chat-container" className={this.state.about ? "small-width" : ""}>
-                        <div className="header">
+                        <div className={`header ${this.state.headerHidden ? "hidden" : ""}`}>
                             <a href="/" className="logo">
-                                <img className="logo" src=".././static/images/quickyelp_logo_white.png" alt="QuickYelp"/>
+                                <img className="logo" src=".././static/images/quickyelp_logo_black_bordered.png" alt="QuickYelp"/>
                             </a>
 
                             <div className="powered-section">
@@ -249,6 +279,12 @@
                             </div>
                         </div>
 
+                        <button id="toggle-header-button" className="toggle" onClick={this.toggleHeader}>
+                            {this.state.headerHidden ? 
+                                <img id="show-image" src=".././static/images/show_header.png" alt="Show"></img> : 
+                                <img id="hide-image" src=".././static/images/hide_header.png" alt="Hide"></img>}
+                        </button>
+
                         <div id="chat-log-container" ref={this.chatLogRef}>
                             <div id="chat-log-content">
                                 {this.state.chatHistory.map((entry, index) => (
@@ -256,12 +292,13 @@
                                         <div
                                             className={`${
                                                 entry.startsWith("USR") ? "user-message" : "chatbot-message"
-                                            } animate-fade-in`}
+                                            } ${
+                                                entry.startsWith("USR") ? "animate-fade-in-right" : "animate-fade-in-left"
+                                            }`}
                                         >
-                                            {entry.startsWith("USR") ? "😁 " : "🤖 "}
-                                            {entry.substring(3) === "LOADING" && (
-                                                <span className="loading-animation"></span>
-                                            )}
+                                            {entry.startsWith("BOT") && "🤖 "}
+                                            {entry.substring(3) === "LOADING" && "Thinking... "}
+                                            {entry.substring(3) === "LOADING" && (<span className="loading-animation"></span>)}
                                             {entry.substring(3) !== "LOADING" && entry.substring(3)}
                                         </div>
                                     </div>
@@ -275,7 +312,7 @@
                                     type="text"
                                     name="query"
                                     id="query"
-                                    placeholder="Ask a question..."
+                                    placeholder="What do the positive reviews say?"
                                     value={this.state.query}
                                     onChange={this.handleInputChange}
                                     autocomplete="off"

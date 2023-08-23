@@ -11,7 +11,7 @@ QuickYelp is powered by three main APIs:
 2. OpenAI API
 3. LangChain
 
-We leverage Yelp Fusion to retrieve data related to the business in question. Following this, LangChain is utilized to feed documents to OpenAI's language model, ChatGPT.
+We leverage Yelp Fusion to retrieve data related to the business in question. Following this, LangChain is utilized to feed documents to OpenAI's language model, GPT-3.5.
 
 Once a user submits a query through LangChain's RetrievalQA chain, the query goes through two FAISS (Facebook AI Similarity Search) indexes:
 - Index containing the Yelp business information (name, phone, hours, etc)
@@ -24,8 +24,7 @@ Both chatbot replies are received, then fed once more to OpenAI's GPT-3.5 langua
 # Tech Stack 🤖
 - Python
     - Flask
-        - Flask-Limiter
-        - Redis
+    - Redis
     - LXML
     - AIOHTTP
 - HTML/CSS

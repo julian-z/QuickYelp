@@ -79,10 +79,11 @@ async def request_review_urls(review_urls):
     """
     async with aiohttp.ClientSession() as session:
         results = []
-        for url in review_urls:
+        for i, url in enumerate(review_urls):
             data = await fetch_url(session, url)
             results.append(data)
-            await asyncio.sleep(5)
+            if i != len(review_urls)-1:
+                await asyncio.sleep(5)
         return results
 
 

@@ -32,11 +32,11 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
-app.config['SESSION_KEY_PREFIX'] = 'QuickYelp:'
+app.config['SESSION_KEY_PREFIX'] = 'quickyelp:'
 app.config['SESSION_REDIS'] = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 Session(app)
 
-# # PRODUCTION (1): Uncomment this for deployment environment
+# # PRODUCTION (1/5): Uncomment this for deployment environment
 # app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 # redis_url = urlparse(os.environ.get("REDIS_URL"))
 # app.config['SESSION_TYPE'] = 'redis'
@@ -78,7 +78,7 @@ def index():
     global DEBUGGING, AI_REPLIES, SAMPLE_LINKS
     chat_history = []
 
-    # # PRODUCTION (2): Rate limiting
+    # # PRODUCTION (2/5): Rate limiting
     # uid = get_unique_uid(request)
     # cur_rate = redis_client.get(uid)
     # if cur_rate and int(cur_rate) >= 5:
@@ -86,7 +86,7 @@ def index():
 
     if request.method == "POST":
 
-        # # PRODUCTION (3): Rate limiting
+        # # PRODUCTION (3/5): Rate limiting
         # if not redis_client.exists(uid):
         #     redis_client.setex(uid, 60, 1)
         # else:
@@ -148,7 +148,7 @@ def index():
                             print("ERROR TRYING TO CLEAN UP TEMPFILES", e)
 
                     except Exception as e:
-                        initial_response = "❌ Notice: Data retrieval has failed. Please return to the homepage and try again."
+                        initial_response = "Notice: Data retrieval has failed. Please return to the homepage by clicking the top left logo and try again. ❌"
                         print(repr(e))
                 else:
                     print("MOCKING SCRAPING")
@@ -158,7 +158,7 @@ def index():
                         # time.sleep(6.5)
                     print("MOCK SCRAPE DONE")
                     business_data = {
-                        "name": random.choice(["Restaurant", None]), 
+                        "name": "Restaurant", 
                         "history": random.choice(["History", None]),
                         "specialties": random.choice(["Specialties", None]),
                         "location": random.choice(["Restaurant", None]),
@@ -171,9 +171,23 @@ def index():
                         "transactions": random.choice(["Transactions", None]),
                         "reviews": {'5': ["Great!"], '4': ["Good!"], '3': ["Decent."]}
                     }
+                    # business_data = {
+                    #     "name": None,
+                    #     "history": None,
+                    #     "specialties": None,
+                    #     "location": None,
+                    #     "phone": None,
+                    #     "categories": None,
+                    #     "overall_rating": None,
+                    #     "price_range": None,
+                    #     "hours": None,
+                    #     "is_open_now": None,
+                    #     "transactions": None,
+                    #     "reviews": {}
+                    # }
 
                 initial_response = craft_initial_response(business_data) if not initial_response else initial_response
-                return render_template("chat.html", initial_response=initial_response)
+                return render_template("chat.html", initial_response=initial_response, url=url, business_data=business_data)
         
         # Handle chatbot queries
         else:
@@ -188,7 +202,7 @@ def index():
                 for word in wordset:
                     if word in query.lower():
                         query = '*' * len(query)
-                        chatbot_reply = f"❌ Your message has been marked as inappropriate: \"{word[0]}{'*'*(len(word)-1)}\""
+                        chatbot_reply = f"Your message has been flagged: \"{word[0]}{'*'*(len(word)-1)}\" ❌"
                         break
                 else:
                     if not DEBUGGING:
@@ -198,7 +212,7 @@ def index():
                         info_db = session.get('info_db')
                         review_db = session.get('review_db')
                         if not info_db or not review_db:
-                            chatbot_reply = "❌ Notice: Chatbot data has failed to load, the chat may have reached its 10 minute time limit. Please return to the homepage and try again. To read why this time limit is in place, read via the popup on the homepage."
+                            chatbot_reply = "Notice: Chatbot data has failed to load, the chat may have reached its 10 minute time limit. Please return to the homepage and try again. To read why this time limit is in place, read via the popup on the homepage. ❌"
                             if not info_db:
                                 print("INFO_DB NOT FOUND IN SESSION")
                             if not review_db:
@@ -229,7 +243,7 @@ def index():
                                 )
                                 chatbot_reply = llm.choices[0].message.content
                             except Exception as e:
-                                chatbot_reply = "❌ Notice: Chatbot has failed to query, the chat may have reached its 10 minute time limit. Please return to the homepage and try again. To read why this time limit is in place, read via the popup on the homepage."
+                                chatbot_reply = "Notice: Chatbot has failed to query, the chat may have reached its 10 minute time limit. Please return to the homepage and try again. To read why this time limit is in place, read via the popup on the homepage. ❌"
                                 print(repr(e))
                         
                     else:
@@ -255,7 +269,7 @@ def index():
         if session.get('review_db'):
             session.pop('review_db')
         
-        # # PRODUCTION (3): Uncomment this for deployment, keep commented if testing locally
+        # # PRODUCTION (4/5): Uncomment this for deployment, keep commented if testing locally
         # if redis_client:
         #     if redis_client.exists('info_db'):
         #         redis_client.delete('info_db')
@@ -270,7 +284,7 @@ def index():
 
 
 def handle_rate_limit_error():
-    error_message = "❌ Notice: You are sending requests too fast! Please wait at least 1 minute before sending your next request. This cooldown is applied to avoid spam abuse of the website."
+    error_message = "Notice: You are sending requests too fast! Please wait at least 1 minute before sending your next request. This cooldown is applied to avoid spam abuse of the website. ❌"
 
     if request.method == "POST":
         if "url" in request.form:
@@ -309,7 +323,7 @@ def cleanup():
         if session.get('review_db'):
             session.pop('review_db')
         
-        # # PRODUCTION (4): Uncomment this for deployment, keep commented if testing locally
+        # # PRODUCTION (5/5): Uncomment this for deployment, keep commented if testing locally
         # if redis_client:
         #     if redis_client.exists('info_db'):
         #         redis_client.delete('info_db')
@@ -329,7 +343,7 @@ def craft_initial_response(business_data: dict) -> str:
     Present a string which shows what data has been retrieved from the Yelp scrape.
     """
     found = False
-    res = "✅ Successfully retrieved: "
+    res = "Successfully retrieved: "
 
     if business_data["name"]:
         res += "Name, "
@@ -350,7 +364,7 @@ def craft_initial_response(business_data: dict) -> str:
         res += "Reviews, "
         found = True
     
-    return res[:-2] if found else "❌ Notice: Data retrieval has failed. Please return to the homepage and try again."
+    return res[:-2]+" ✅" if found else "Notice: Data retrieval has failed. Please return to the homepage by clicking the top left logo and try again. ❌"
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@
     <div id="react-chat"></div>
 
     <script>
-        // Event listener for cleaning up tempfiles/Redis
+        // Event listener for cleaning up Redis
         window.addEventListener("beforeunload", async () => {
             try {
                 const response = await fetch('/cleanup', {
@@ -35,11 +35,23 @@
         class ChatApp extends React.Component {
             constructor(props) {
                 super(props);
+
+                // Disable chat if data retrieval failed
+                let initChat = ["BOT{{ initial_response }}"];
+                let initWait = false;
+                if ("{{ initial_response }}".startsWith("Success")) {
+                    initChat.push("BOTWelcome to QuickYelp! This chat is related to \""+"{{ business_data['name'] }}"+"\" 👋")
+                }
+                else {
+                    initWait = true;
+                }
+
                 this.state = {
-                    chatHistory: ["BOT👋 Welcome to QuickYelp! I have scanned through the business you provided. Feel free to ask questions about it!", "BOT{{ initial_response }}"],
+                    chatHistory: initChat,
                     query: "",
-                    waiting: false,
+                    waiting: initWait,
                     about: false,
+                    headerHidden: false,
                 };
                 this.chatLogRef = React.createRef();
             }
@@ -51,7 +63,15 @@
                     about: !prevState.about,
                 }));
             };
-    
+
+            // Toggle the Header
+            toggleHeader = () => {
+                this.setState((prevState) => ({
+                    about: false,
+                    headerHidden: !prevState.headerHidden,
+                }));
+            };
+
 
             // Handle asynchronous calls to Flask
             handleSubmit = async (event) => {
@@ -103,7 +123,7 @@
                             chatHistory: [
                                 ...prevState.chatHistory.slice(0, -2),
                                 "USR" + userQuery,
-                                "BOT❌ Notice: You are sending requests too fast! Please wait at least 1 minute before sending your next request. This cooldown is applied to avoid spam abuse of the website.",
+                                "BOTNotice: You are sending requests too fast! Please wait at least 1 minute before sending your next request. This cooldown is applied to avoid spam abuse of the website. ❌",
                             ],
                             query: "",
                             waiting: false,
@@ -137,17 +157,17 @@
             render() {
                 return (
                     <div id="chat-container" className={this.state.about ? "small-width" : ""}>
-                        <div className="header">
+                        <div className={`header ${this.state.headerHidden ? "hidden" : ""}`}>
                             <a href="/" className="logo">
-                                <img className="logo" src=".././static/images/quickyelp_logo_white.png" alt="QuickYelp"/>
+                                <img className="logo" src=".././static/images/quickyelp_logo_black_bordered.png" alt="QuickYelp"/>
                             </a>
 
                             <div className="powered-section">
                                 <p className="powered-by">
                                     Powered By:&nbsp;
-                                    <a href="https://fusion.yelp.com/"><img className="powered-logos" src=".././static/images/yelp.png" alt="Yelp Fusion"/> </a>
-                                    <a href="https://openai.com/blog/openai-api"><img className="powered-logos" src=".././static/images/openai.png" alt="OpenAI"/> </a>
-                                    <a href="https://www.langchain.com/"><img className="powered-logos" src=".././static/images/langchain.png" alt="LangChain "/></a>
+                                    <a href="https://fusion.yelp.com/" target="_blank" rel="noopener noreferrer"><img className="powered-logos" src=".././static/images/yelp.png" alt="Yelp Fusion"/> </a>
+                                    <a href="https://openai.com/blog/openai-api" target="_blank" rel="noopener noreferrer"><img className="powered-logos" src=".././static/images/openai.png" alt="OpenAI"/> </a>
+                                    <a href="https://www.langchain.com/" target="_blank" rel="noopener noreferrer"><img className="powered-logos" src=".././static/images/langchain.png" alt="LangChain "/></a>
                                 </p>
                                 <p className="powered-by">
                                     GitHub:&nbsp;
@@ -155,6 +175,12 @@
                                 </p>
                             </div>
                         </div>
+
+                        <button id="toggle-header-button" className="toggle" onClick={this.toggleHeader}>
+                            {this.state.headerHidden ? 
+                                <img id="show-image" src=".././static/images/show_header.png" alt="Show"></img> : 
+                                <img id="hide-image" src=".././static/images/hide_header.png" alt="Hide"></img>}
+                        </button>
 
                         <div id="chat-log-container" ref={this.chatLogRef}>
                             <div id="chat-log-content">
@@ -167,7 +193,7 @@
                                                 entry.startsWith("USR") ? "animate-fade-in-right" : "animate-fade-in-left"
                                             }`}
                                         >
-                                            {entry.startsWith("BOT") && "🤖 "}
+                                            {entry.startsWith("BOT") && <a href="{{ url }}" target="_blank" rel="noopener noreferrer"><img className="chat-logo" src=".././static/images/yelp_burst.png" alt="Yelp"/></a>}
                                             {entry.substring(3) === "LOADING" && "Thinking... "}
                                             {entry.substring(3) === "LOADING" && (<span className="loading-animation"></span>)}
                                             {entry.substring(3) !== "LOADING" && entry.substring(3)}
@@ -183,7 +209,7 @@
                                     type="text"
                                     name="query"
                                     id="query"
-                                    placeholder="Ask a question..."
+                                    placeholder="What do the positive reviews say?"
                                     value={this.state.query}
                                     onChange={this.handleInputChange}
                                     autocomplete="off"
