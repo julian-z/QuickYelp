@@ -91,7 +91,10 @@ def index():
         #     redis_client.setex(uid, 60, 1)
         # else:
         #     redis_client.incr(uid)
-        #     redis_client.expire(uid, 60)
+        #     if int(redis_client.get(uid)) >= 5:
+        #         redis_client.expire(uid, 30)
+        #     else:
+        #         redis_client.expire(uid, 60)
 
         # Handle URL/Number popup
         if "url" in request.form:
@@ -284,7 +287,7 @@ def index():
 
 
 def handle_rate_limit_error():
-    error_message = "Notice: You are sending requests too fast! Please wait at least 1 minute before sending your next request. This cooldown is applied to avoid spam abuse of the website. ❌"
+    error_message = "Notice: You are sending requests too fast! Please wait at least 30 seconds before sending your next request. This cooldown is applied to avoid spam abuse of the website. ❌"
 
     if request.method == "POST":
         if "url" in request.form:

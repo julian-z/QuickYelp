@@ -25,7 +25,7 @@
                 <input type="text" name="url" autocomplete="off" required placeholder="https://www.yelp.com/biz/..."><br>
                 <!-- <label for="num_pages">How Many Pages of Reviews Should I Scan? (0-5):</label>
                 <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br> -->
-                <input type="submit" value="Start Scan (Estimated 20 Seconds)">
+                <input type="submit" value="Start Scan (Estimated 15 Seconds)">
             </form>
 
             {% if error_message != "" %}
@@ -115,7 +115,7 @@
                 chatbotMessage.appendChild(loadingAnimation);
 
                 // const num_pages = parseInt(document.querySelector("input[name='num_pages']").value);
-                const estimatedTime = 20;
+                const estimatedTime = 17;
                 let elapsedSeconds = 0;
                 const elapsedTimeInterval = setInterval(() => {
                     elapsedSeconds++;

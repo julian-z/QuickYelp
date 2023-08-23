@@ -833,6 +833,7 @@ border-radius: 5px;
 .message-container {
   display: flex;
   width: 100%;
+  white-space: pre-line;
 }
 
 .user-message {
