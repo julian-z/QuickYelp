@@ -10,19 +10,19 @@ from urllib.parse import urlparse
 from datetime import timedelta
 import redis
 
+import asyncio
 import bleach
 import random
 import tempfile
 import os
 
-import openai
 from langchain.document_loaders import TextLoader
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 
-from shell import validate_url, scrape_yelp_page, format_business_data
+from shell import validate_url, scrape_yelp_page, format_business_data, run_query
 
 app = Flask(__name__)
 
@@ -174,6 +174,7 @@ def index():
                         "transactions": random.choice(["Transactions", None]),
                         "reviews": {'5': ["Great!"], '4': ["Good!"], '3': ["Decent."]}
                     }
+                    # # Test failed data retrieval
                     # business_data = {
                     #     "name": None,
                     #     "history": None,
@@ -229,22 +230,7 @@ def index():
                                 # Query using LangChain's RetrievalQA
                                 info_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0.5), chain_type="stuff", retriever=info_db.as_retriever())
                                 review_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0.5), chain_type="stuff", retriever=review_db.as_retriever())
-                                res_1 = info_qa.run(query)
-                                res_2 = review_qa.run(query)
-                                merge_request = {
-                                    "role": "system", 
-                                        "content": f"Please merge these two chatbot replies to answer the query: {query}\n\n" + \
-                                                f"Reply 1 (Based on Yelp's business information): {res_1}\n\n" + \
-                                                f"Reply 2 (Based on Yelp reviews): {res_2}\n\n" + \
-                                                "If either reply says they do not know the answer, please disregard it.\n" + \
-                                                "If both replies do not know the answer, please say either message."
-                                }
-                                llm = openai.ChatCompletion.create(
-                                    model="gpt-3.5-turbo", 
-                                    temperature=0.5, 
-                                    messages=[merge_request]
-                                )
-                                chatbot_reply = llm.choices[0].message.content
+                                chatbot_reply = asyncio.run(run_query(info_qa, review_qa, query))
                             except Exception as e:
                                 chatbot_reply = "Notice: Chatbot has failed to query, the chat may have reached its 10 minute time limit. Please return to the homepage and try again. To read why this time limit is in place, read via the popup on the homepage. ❌"
                                 print(repr(e))

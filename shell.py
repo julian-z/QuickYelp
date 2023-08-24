@@ -381,6 +381,40 @@ def validate_url(url):
         re.match(r'^https://yelp\.to/[a-zA-Z0-9]+$', url)
 
 
+async def call_info_qa(info_qa, query):
+    return await asyncio.to_thread(info_qa.run, query)
+
+async def call_review_qa(review_qa, query):
+    return await asyncio.to_thread(review_qa.run, query)
+
+async def run_query(info_qa, review_qa, query):
+    """
+    Asynchronously perform the two LangChain queries.
+    """
+    # LangChain queries (information and review chains)
+    info_task = call_info_qa(info_qa, query)
+    review_task = call_review_qa(review_qa, query)
+    
+    # Concurrently execute both tasks
+    res_1, res_2 = await asyncio.gather(info_task, review_task)
+
+    # Merge the two chatbot replies
+    merge_request = {
+        "role": "system", 
+        "content": f"Please merge these two chatbot replies to answer the query: {query}\n\n" + \
+                   f"Reply 1 (Based on Yelp's business information): {res_1}\n\n" + \
+                   f"Reply 2 (Based on Yelp reviews): {res_2}\n\n" + \
+                   "If either reply says they do not know the answer, please disregard it.\n" + \
+                   "If both replies do not know the answer, please say either message."
+    }
+    llm = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo", 
+        temperature=0.5, 
+        messages=[merge_request]
+    )
+    return llm.choices[0].message.content
+
+
 if __name__ == "__main__":
     """
     DEBUGGING PURPOSES: Test links
@@ -496,26 +530,12 @@ if __name__ == "__main__":
         review_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0.5), chain_type="stuff", retriever=review_db.as_retriever())
         end = time.perf_counter()
         print("Elapsed time to load db: ", end-start)
+
+        # Asynchronously call info and review chains
         start = time.perf_counter()
-        res_1 = info_qa.run(query)
-        res_2 = review_qa.run(query)
-        merge_request = {
-            "role": "system", 
-                 "content": f"Please merge these two chatbot replies to answer the query: {query}\n\n" + \
-                        f"Reply 1 (Based on Yelp's business information): {res_1}\n\n" + \
-                        f"Reply 2 (Based on Yelp reviews): {res_2}\n\n" + \
-                        "If either reply says they do not know the answer, please disregard it.\n" + \
-                        "If both replies do not know the answer, please say either message."
-        }
-        llm = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", 
-            temperature=0.5, 
-            messages=[merge_request]
-        )
-        res = llm.choices[0].message.content
+        res = asyncio.run(run_query(info_qa, review_qa, query))
         end = time.perf_counter()
         print("Elapsed time to query: ", end-start)
-        
         print(res)
-        print('-'*100)
+        print('-' * 100)
 
