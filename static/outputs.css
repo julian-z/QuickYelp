@@ -862,11 +862,10 @@ border-radius: 5px;
 }
 
 .business-photo {
-  flex-grow: 1;
-  width: auto;
+  width: 20vh;
+  height: 20vh;
   object-fit: cover;
   box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 10px 0px;
-  height: 30vh;
 }
 
 .business-info {
@@ -882,7 +881,7 @@ border-radius: 5px;
 }
 
 .business-rating {
-  width: 100%;
+  width: 20vh;
   height: auto;
 }
 
@@ -890,7 +889,7 @@ border-radius: 5px;
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 10vh;
+  width: 7vh;
   height: auto;
 }
 
@@ -1078,6 +1077,10 @@ input[type="submit"] {
 
   #chat-container {
     height: 88vh;
+  }
+
+  .business-yelp {
+    width: 5vh;
   }
 
   .user-message,
