@@ -33,7 +33,7 @@ Both chatbot replies are received, then fed once more to OpenAI's GPT-3.5 langua
     - React
 
 # Screenshots 🎥
-Demo Video: https://youtu.be/IsDUfRyTwc8
+Demo Video: https://youtu.be/RuM0cEnhojY
 
 Screenshots as of 8/24/23:
 ![](https://github.com/julian-z/QuickYelp/blob/main/static/images/home.png)

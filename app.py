@@ -36,7 +36,7 @@ app.config['SESSION_KEY_PREFIX'] = 'quickyelp:'
 app.config['SESSION_REDIS'] = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
 Session(app)
 
-# # PRODUCTION (1/5): Uncomment this for deployment environment
+# # PRODUCTION (1/6): Uncomment this for deployment environment
 # app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 # redis_url = urlparse(os.environ.get("REDIS_URL"))
 # app.config['SESSION_TYPE'] = 'redis'
@@ -90,7 +90,7 @@ def index():
     global DEBUGGING, AI_REPLIES, SAMPLE_LINKS, STARS
     chat_history = []
 
-    # # PRODUCTION (2/5): Rate limiting
+    # # PRODUCTION (2/6): Rate limiting
     # uid = get_unique_uid(request)
     # cur_rate = redis_client.get(uid)
     # if cur_rate and int(cur_rate) >= 5:
@@ -98,7 +98,7 @@ def index():
 
     if request.method == "POST":
 
-        # # PRODUCTION (3/5): Rate limiting
+        # # PRODUCTION (3/6): Rate limiting
         # if not redis_client.exists(uid):
         #     redis_client.setex(uid, 60, 1)
         # else:
@@ -196,11 +196,17 @@ def index():
                         "reviews": {'5': ["Great!"], '4': ["Good!"], '3': ["Decent."]}
                     }
 
+                # Format for business preview
                 business_data["overall_rating"] = "" if not business_data["overall_rating"] else STARS[str(business_data["overall_rating"])]
                 business_data["image_url"] = "" if not business_data["image_url"] else business_data["image_url"]
                 business_data["name"] = "" if not business_data["name"] else business_data["name"]
                 business_data["location"] = "" if not business_data["location"] else ', '.join(business_data["location"])
                 initial_response = craft_initial_response(business_data) if not initial_response else initial_response
+
+                # # PRODUCTION (4/6): Chat count
+                # redis_client.incr('chats')
+                # print("CHAT COUNT:", redis_client.get('chats'))
+
                 return render_template("chat.html", initial_response=initial_response, business_data=business_data)
         
         # Handle chatbot queries
@@ -268,7 +274,7 @@ def index():
         if session.get('review_db'):
             session.pop('review_db')
         
-        # # PRODUCTION (4/5): Uncomment this for deployment, keep commented if testing locally
+        # # PRODUCTION (5/6): Uncomment this for deployment, keep commented if testing locally
         # if redis_client:
         #     if redis_client.exists('info_db'):
         #         redis_client.delete('info_db')
@@ -322,7 +328,7 @@ def cleanup():
         if session.get('review_db'):
             session.pop('review_db')
         
-        # # PRODUCTION (5/5): Uncomment this for deployment, keep commented if testing locally
+        # # PRODUCTION (6/6): Uncomment this for deployment, keep commented if testing locally
         # if redis_client:
         #     if redis_client.exists('info_db'):
         #         redis_client.delete('info_db')

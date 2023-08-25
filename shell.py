@@ -146,7 +146,7 @@ def retrieve_yelp_info(name: str, location: str, web_app: bool = False):
                     else:
                         print("ERROR -- STATUS CODE:", response.status)
                         raise Exception
-                    time.sleep(3)
+                    time.sleep(1)
                 business_data["url"] = yelp_url
                 
             except Exception as e:
@@ -356,7 +356,7 @@ async def run_query(info_qa, review_qa, query):
     }
     llm = openai.ChatCompletion.create(
         model="gpt-3.5-turbo", 
-        temperature=0.5, 
+        temperature=0, 
         messages=[merge_request]
     )
     return llm.choices[0].message.content
@@ -446,8 +446,8 @@ if __name__ == "__main__":
 
         # Query using LangChain's RetrievalQA
         start = time.perf_counter()
-        info_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0.5), chain_type="stuff", retriever=info_db.as_retriever())
-        review_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0.5), chain_type="stuff", retriever=review_db.as_retriever())
+        info_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0), chain_type="stuff", retriever=info_db.as_retriever())
+        review_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0), chain_type="stuff", retriever=review_db.as_retriever())
         end = time.perf_counter()
         print("Elapsed time to load db: ", end-start)
 
