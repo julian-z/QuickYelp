@@ -3,6 +3,7 @@
 <head>
     <title>QuickYelp - Chat</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='outputs.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
@@ -40,7 +41,7 @@
                 let initChat = ["BOT{{ initial_response }}"];
                 let initWait = false;
                 if ("{{ initial_response }}".startsWith("Success")) {
-                    initChat.push("BOTWelcome to QuickYelp! This chat is related to \""+"{{ business_data['name'] }}"+"\" 👋")
+                    initChat.push("BOTWelcome to QuickYelp! 👋\n- To return home, click the QuickYelp logo in the top left corner.\n- To view the business on Yelp, click the Yelp logo in any chatbot reply, or the Yelp logo in the first message.\n- To hide the header, click the double arrow icon at the top of the screen.\n- Not the right restaurant? Try to use more specific terms, such as the exact address or Yelp display name.")
                 }
                 else {
                     initWait = true;
@@ -54,6 +55,10 @@
                     headerHidden: false,
                 };
                 this.chatLogRef = React.createRef();
+                this.businessName = "{{ business_data['name'] | safe }}";
+                this.businessRating = "{{ business_data['overall_rating'] }}";
+                this.businessImage = "{{ business_data['image_url'] }}";
+                this.businessAddress = "{{ business_data['location']  | safe }}";
             }
 
 
@@ -184,6 +189,21 @@
 
                         <div id="chat-log-container" ref={this.chatLogRef}>
                             <div id="chat-log-content">
+                                {!this.state.chatHistory[0].startsWith("BOTNotice: ") &&
+                                <div className="message-container">
+                                    <div className={`${"business-display"} ${"animate-fade-in-left"}`}>
+                                        <div className="business-photo-container">
+                                            <img className="business-photo" src={this.businessImage} alt="Picture" />
+                                        </div>
+                                        <div className="business-info">
+                                            <p className="business-name">{this.businessName}</p>
+                                            <p className="business-address">{this.businessAddress}</p>
+                                            <img className="business-rating" src={this.businessRating} alt="Rating" />
+                                            <a href="{{ business_data['url'] }}" target="_blank" rel="noopener noreferrer"><img className="business-yelp" src=".././static/images/yelp_logo_word.png" alt="Yelp Page"/></a>
+                                        </div>
+                                    </div>
+                                </div>
+                                }
                                 {this.state.chatHistory.map((entry, index) => (
                                     <div key={index} className="message-container">
                                         <div
@@ -193,7 +213,7 @@
                                                 entry.startsWith("USR") ? "animate-fade-in-right" : "animate-fade-in-left"
                                             }`}
                                         >
-                                            {entry.startsWith("BOT") && <a href="{{ url }}" target="_blank" rel="noopener noreferrer"><img className="chat-logo" src=".././static/images/yelp_burst.png" alt="Yelp"/></a>}
+                                            {entry.startsWith("BOT") && <a href="{{ business_data['url'] }}" target="_blank" rel="noopener noreferrer"><img className="chat-logo" src=".././static/images/yelp_burst.png" alt="Yelp"/></a>}
                                             {entry.substring(3) === "LOADING" && "Thinking... "}
                                             {entry.substring(3) === "LOADING" && (<span className="loading-animation"></span>)}
                                             {entry.substring(3) !== "LOADING" && entry.substring(3)}

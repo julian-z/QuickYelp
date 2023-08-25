@@ -836,6 +836,64 @@ border-radius: 5px;
   white-space: pre-line;
 }
 
+.business-display {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.375rem;
+  --tw-bg-opacity: 1;
+  background-color: rgb(235 246 255 / var(--tw-bg-opacity));
+  padding: 1rem;
+  font-weight: 600;
+  --tw-text-opacity: 1;
+  color: rgb(0 0 0 / var(--tw-text-opacity));
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 10px 0px;
+  align-self: flex-start;
+  margin-right: auto;
+  max-width: 100%;
+  position: relative;
+}
+
+.business-photo-container {
+  display: flex;
+  flex-direction: column;
+  padding-right: 1rem;
+}
+
+.business-photo {
+  flex-grow: 1;
+  width: auto;
+  object-fit: cover;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 10px 0px;
+  height: 30vh;
+}
+
+.business-info {
+  flex: 1;
+}
+
+.business-name {
+  font-size: 1.5rem;
+}
+
+.business-address {
+  font-weight: 400;
+}
+
+.business-rating {
+  width: 100%;
+  height: auto;
+}
+
+.business-yelp {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10vh;
+  height: auto;
+}
+
 .user-message {
   display: inline-block;
   margin-top: 0.5rem;
@@ -871,6 +929,33 @@ border-radius: 5px;
   margin-right: auto;
   max-width: 75%;
   /* letter-spacing: normal; */
+}
+
+.info-icon {
+  color: #007bff;
+  margin-left: 5px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.info-icon:hover {
+  opacity: 0.7;
+}
+
+.info-popup {
+  display: none;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.375rem;
+  --tw-bg-opacity: 1;
+  padding: 1rem;
+  width: 100%;
+  max-width: 100%;
+  background-color:  rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255);
+  box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 10px 0px;
+  padding: 5px;
+  font-size: 0.75rem;
 }
 
 input[type="text"],

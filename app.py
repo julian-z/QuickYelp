@@ -22,7 +22,7 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 
-from shell import validate_url, scrape_yelp_page, format_business_data, run_query
+from shell import retrieve_yelp_info, format_business_data, run_query
 
 app = Flask(__name__)
 
@@ -49,11 +49,10 @@ Session(app)
 
 DEBUGGING = False # Avoid utilizing Yelp Fusion and OpenAI
 AI_REPLIES = [
-    "Oops! It seems like the Yelp URL you entered is not valid. Please try again.",
-    "Sorry, but the Yelp URL you provided is incorrect or unsupported. Please double-check and retry.",
-    "Uh-oh! The Yelp URL you entered doesn't seem to work. Please provide a valid URL and try again.",
-    "We encountered an issue with the Yelp URL you provided. Please make sure it's correct and retry.",
-    "Hmmm... It appears the Yelp URL you entered is not valid. Kindly check it and try once more."
+    "Sorry, the location should contain at least 1 character and at most 250 characters.",
+    "Uh-oh! The length of the location you provided doesn't meet the required range (1-250 characters).",
+    "We encountered an issue with the location you entered. It needs to be between 1 and 250 characters.",
+    "Hmmm... It appears the length of the location you entered doesn't match the expected range (1-250 characters)."
 ]
 SAMPLE_LINKS = [
     "https://www.yelp.com/biz/nep-cafe-by-kei-concepts-fountain-valley-4",
@@ -71,11 +70,24 @@ SAMPLE_LINKS = [
     "https://www.yelp.com/biz/breakfast-republic-irvine-2",
     "https://www.yelp.com/biz/daves-hot-chicken-irvine-2"
 ]
+STARS = {
+    '0.0': ".././static/images/stars/0.png",
+    '0.5': ".././static/images/stars/0.png",
+    '1.0': ".././static/images/stars/1.png",
+    '1.5': ".././static/images/stars/1-5.png",
+    '2.0': ".././static/images/stars/2.png",
+    '2.5': ".././static/images/stars/2-5.png",
+    '3.0': ".././static/images/stars/3.png",
+    '3.5': ".././static/images/stars/3-5.png",
+    '4.0': ".././static/images/stars/4.png",
+    '4.5': ".././static/images/stars/4-5.png",
+    '5.0': ".././static/images/stars/5.png"
+}
 
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    global DEBUGGING, AI_REPLIES, SAMPLE_LINKS
+    global DEBUGGING, AI_REPLIES, SAMPLE_LINKS, STARS
     chat_history = []
 
     # # PRODUCTION (2/5): Rate limiting
@@ -97,13 +109,13 @@ def index():
         #         redis_client.expire(uid, 60)
 
         # Handle URL/Number popup
-        if "url" in request.form:
+        if "name" in request.form and "location" in request.form:
             # Initial form submission for starting the chatbot
-            url = request.form.get("url")
-            num_pages = 2
+            name = request.form.get("name")
+            location = request.form.get("location")
 
             # Re-prompt user if url or num_pages is not valid
-            if not validate_url(url):
+            if len(location) > 250:
                 return render_template("index.html", error_message=AI_REPLIES[random.randint(0, len(AI_REPLIES)-1)], sample_link=SAMPLE_LINKS[random.randint(0, len(SAMPLE_LINKS)-1)])
 
             # Perform data scraping here using the provided URL and num_pages
@@ -111,7 +123,14 @@ def index():
                 initial_response = None
 
                 if not DEBUGGING:             
-                    business_data = scrape_yelp_page(url, num_pages, web_app=True)
+                    business_data = retrieve_yelp_info(name, location, web_app=True)
+
+                    for section in business_data:
+                        if business_data[section]:
+                            break
+                    else:
+                        return render_template("index.html", error_message="It seems that we could not find a Yelp business which matched your query. Please double-check and try again.", sample_link=SAMPLE_LINKS[random.randint(0, len(SAMPLE_LINKS)-1)])
+                    
                     business_info, business_reviews = format_business_data(business_data, web_app=True)
                     info_temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
                     review_temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
@@ -154,44 +173,35 @@ def index():
                         initial_response = "Notice: Data retrieval has failed. Please return to the homepage by clicking the top left logo and try again. ❌"
                         print(repr(e))
                 else:
-                    print("MOCKING SCRAPING")
+                    print("MOCKING RETRIEVAL")
                     import time
-                    for i in range(num_pages):
-                        print("SCRAPING PAGE", i+1)
+                    for i in range(2):
+                        print("RETRIEVING PAGE", i+1)
                         # time.sleep(6.5)
-                    print("MOCK SCRAPE DONE")
+                    print("MOCK RETRIEVAL DONE")
                     business_data = {
-                        "name": "Restaurant", 
+                        "name": "Bert's Restaurant", 
                         "history": random.choice(["History", None]),
                         "specialties": random.choice(["Specialties", None]),
-                        "location": random.choice(["Restaurant", None]),
+                        "location": ["123 Bert St", "California"],
                         "phone": random.choice(["123-456-7890", None]),
                         "categories": random.choice([["Food"], None]),
-                        "overall_rating": random.choice(["5.0", None]),
+                        "overall_rating": 5.0,
                         "price_range": random.choice(["Money", None]),
                         "hours": random.choice([["Open"], None]),
                         "is_open_now": random.choice([True, None]),
                         "transactions": random.choice(["Transactions", None]),
+                        "url": "https://www.yelp.com/",
+                        "image_url": "https://s3-media2.fl.yelpcdn.com/bphoto/WauUEdASvfaEVqGtkWWe7Q/o.jpg",
                         "reviews": {'5': ["Great!"], '4': ["Good!"], '3': ["Decent."]}
                     }
-                    # # Test failed data retrieval
-                    # business_data = {
-                    #     "name": None,
-                    #     "history": None,
-                    #     "specialties": None,
-                    #     "location": None,
-                    #     "phone": None,
-                    #     "categories": None,
-                    #     "overall_rating": None,
-                    #     "price_range": None,
-                    #     "hours": None,
-                    #     "is_open_now": None,
-                    #     "transactions": None,
-                    #     "reviews": {}
-                    # }
 
+                business_data["overall_rating"] = "" if not business_data["overall_rating"] else STARS[str(business_data["overall_rating"])]
+                business_data["image_url"] = "" if not business_data["image_url"] else business_data["image_url"]
+                business_data["name"] = "" if not business_data["name"] else business_data["name"]
+                business_data["location"] = "" if not business_data["location"] else ', '.join(business_data["location"])
                 initial_response = craft_initial_response(business_data) if not initial_response else initial_response
-                return render_template("chat.html", initial_response=initial_response, url=url, business_data=business_data)
+                return render_template("chat.html", initial_response=initial_response, business_data=business_data)
         
         # Handle chatbot queries
         else:
@@ -276,7 +286,7 @@ def handle_rate_limit_error():
     error_message = "Notice: You are sending requests too fast! Please wait at least 30 seconds before sending your next request. This cooldown is applied to avoid spam abuse of the website. ❌"
 
     if request.method == "POST":
-        if "url" in request.form:
+        if "name" in request.form and "location" in request.form:
             print("RATE LIMIT EXCEEDED IN POPUP")
             return render_template("index.html", error_message=error_message, sample_link=random.choice(SAMPLE_LINKS))
         else:
@@ -329,7 +339,7 @@ def cleanup():
 
 def craft_initial_response(business_data: dict) -> str:
     """
-    Present a string which shows what data has been retrieved from the Yelp scrape.
+    Present a string which shows what data has been retrieved from the Yelp retrieval.
     """
     found = False
     res = "Successfully retrieved: "

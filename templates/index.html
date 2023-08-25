@@ -21,8 +21,13 @@
                 QuickYelp - AI Yelp Review Scanner
             </h2>
             <form method="post">
-                <label for="url">Yelp URL:</label>
-                <input type="text" name="url" autocomplete="off" required placeholder="https://www.yelp.com/biz/..."><br>
+                <label for="name">Business Name</label>
+                <input type="text" name="name" autocomplete="off" required placeholder="Enter the name of a business on Yelp..."><br>
+                <label for="location">Location<span class="info-icon" id="info-icon">🤔</span></label>
+                <input type="text" name="location" autocomplete="off" required placeholder="Enter the state, city, or address...">
+                <div class="info-popup" id="info-popup"><strong>Examples</strong>: <em>"New York City"</em>, <em>"NYC"</em>, <em>"350 5th Ave, New York, NY 10118"</em>.<br><strong>Constraints</strong>: Must be less than (or equal) to 250 characters.</div>                
+                <!-- <label for="url">Yelp URL:</label>
+                <input type="text" name="url" autocomplete="off" required placeholder="https://www.yelp.com/biz/..."><br> -->
                 <!-- <label for="num_pages">How Many Pages of Reviews Should I Scan? (0-5):</label>
                 <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br> -->
                 <input type="submit" value="Start Scan (Estimated 15 Seconds)">
@@ -102,20 +107,34 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            // Information hover
+            const infoIcon = document.getElementById("info-icon");
+            const infoPopup = document.getElementById("info-popup");
+
+            infoIcon.addEventListener("click", function() {
+                infoPopup.style.display = "block";
+            });
+
+            document.addEventListener("click", function(event) {
+                if (event.target !== infoIcon && event.target !== infoPopup) {
+                    infoPopup.style.display = "none";
+                }
+            });
+
+            // Submitting form
             document.getElementById("popup").style.display = "block";
-    
             document.querySelector("#popup form").addEventListener("submit", function(event) {
                 event.preventDefault();
 
                 const chatbotMessage = document.querySelector(".popup-content .chatbot-message");
-                chatbotMessage.textContent = `📶 Verifying Yelp URL... `;
+                chatbotMessage.textContent = `📶 Searching on Yelp for this business... `;
 
                 const loadingAnimation = document.createElement("span");
                 loadingAnimation.className = "loading-animation";
                 chatbotMessage.appendChild(loadingAnimation);
 
                 // const num_pages = parseInt(document.querySelector("input[name='num_pages']").value);
-                const estimatedTime = 17;
+                const estimatedTime = 18;
                 let elapsedSeconds = 0;
                 const elapsedTimeInterval = setInterval(() => {
                     elapsedSeconds++;
@@ -162,97 +181,25 @@
 
             // Toggle the About section (TO-DO)
             toggleAboutSection = () => {
-                // this.setState((prevState) => ({
-                //     about: !prevState.about,
-                // }));
             };
 
             // Toggle the Header
             toggleHeader = () => {
-                // this.setState((prevState) => ({
-                //     about: false,
-                //     headerHidden: !prevState.headerHidden,
-                // }));
             };
 
 
             // Handle asynchronous calls to Flask
             handleSubmit = async (event) => {
-                // event.preventDefault();
-
-                // const formData = new FormData(event.target);
-                // const userQuery = formData.get("query");
-
-                // try {
-                //     // Display the user's query in the chat history
-                //     this.setState((prevState) => ({
-                //         chatHistory: [...prevState.chatHistory, "USR" + userQuery, "BOTLOADING"],
-                //         query: "",
-                //         waiting: true,
-                //     }), () => {
-                //             // Scroll the chat log container to the bottom
-                //             this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
-                //     });
-
-                //     const response = await fetch("/", {
-                //         method: "POST",
-                //         body: formData,
-                //     });
-
-                //     if (response.ok) {
-                //         const data = await response.json();
-                //         const sanitizedUserQuery = data.sanitized_user_query;
-                //         const chatbotReply = data.chatbot_reply;
-
-                //         // Replace the user's query with the chatbot's reply
-                //         // - This allows the user to see the query that is being processed rather
-                //         //   than delaying it until we receive OpenAI's response
-                //         this.setState((prevState) => ({
-                //             chatHistory: [
-                //                 ...prevState.chatHistory.slice(0, -2),
-                //                 "USR" + sanitizedUserQuery,
-                //                 "BOT" + chatbotReply,
-                //             ],
-                //             query: "",
-                //             waiting: false,
-                //         }), () => {
-                //             // Scroll the chat log container to the bottom
-                //             this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
-                //         });
-                //     }
-                //     else if (response.status === 429) {
-                //         // Rate limit exceeded (actually handled by handle_rate_limit_error() in app.py but I'll keep it here in case)
-                //         this.setState((prevState) => ({
-                //             chatHistory: [
-                //                 ...prevState.chatHistory.slice(0, -2),
-                //                 "USR" + userQuery,
-                //                 "BOT❌ Notice: You are sending requests too fast! Please wait at least 1 minute before sending your next request. This cooldown is applied to avoid spam abuse of the website.",
-                //             ],
-                //             query: "",
-                //             waiting: false,
-                //         }), () => {
-                //             // Scroll the chat log container to the bottom
-                //             this.chatLogRef.current.scrollTop = this.chatLogRef.current.scrollHeight;
-                //         });
-                //     }
-                // } catch (error) {
-                //     console.error(error);
-                // }
             };
 
 
             // Update "query" when user types
             handleInputChange = (event) => {
-                // this.setState({ query: event.target.value });
             };
 
 
             // Submit on "enter" button
             handleTextareaKeyDown = (event) => {
-                // if (event.key === "Enter" && !event.shiftKey) {
-                //     event.preventDefault();
-                //     this.handleSubmit(event);
-                // }
             };
 
 
