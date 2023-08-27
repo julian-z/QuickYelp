@@ -81,6 +81,8 @@ def retrieve_yelp_info(name: str, location: str, web_app: bool = False):
     # Try to call Yelp Fusion API: Business Search
     # https://docs.developer.yelp.com/reference/v3_business_search
     print("CALLING YELP FUSION API FOR BUSINESS SEARCH")
+    print("NAME:", name)
+    print("LOCATION:", location)
     yelp_fusion_api_business_search = None
     try:
         yf_url = f"https://api.yelp.com/v3/businesses/search?location={urllib.parse.quote(clean(location))}&term={urllib.parse.quote(clean(name))}&sort_by=best_match&limit=1"
@@ -137,7 +139,7 @@ def retrieve_yelp_info(name: str, location: str, web_app: bool = False):
                         break
                 
                 content = []
-                for url in [yelp_url, yelp_url+"?start=10"]:
+                for i, url in enumerate([yelp_url, yelp_url+"?start=10", yelp_url+"?start=20"]):
                     print("REQUESTING", url)
                     response = requests.get(url)
                     print("RECEIVED")
@@ -146,7 +148,9 @@ def retrieve_yelp_info(name: str, location: str, web_app: bool = False):
                     else:
                         print("ERROR -- STATUS CODE:", response.status)
                         raise Exception
-                    time.sleep(1)
+                    
+                    if i != 2:
+                        time.sleep(1)
                 business_data["url"] = yelp_url
                 
             except Exception as e:
@@ -154,7 +158,7 @@ def retrieve_yelp_info(name: str, location: str, web_app: bool = False):
 
             else:
 
-                # Retrieve first 20 reviews and retrieve online business information
+                # Retrieve first 30 reviews and retrieve online business information
                 for response in content:
                     try:
                         # Get source code
