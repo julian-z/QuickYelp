@@ -869,6 +869,17 @@ border-radius: 5px;
   border-radius: 2vh;
 }
 
+.review-photo {
+  width: 20vh;
+  height: 20vh;
+  object-fit: cover;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 10px 0px;
+  border-radius: 2vh;
+  width: 5vh; 
+  height: 5vh; 
+  border-radius: 100%;
+}
+
 .business-info {
   flex: 1;
 }

@@ -228,9 +228,9 @@ def retrieve_yelp_info(name: str, location: str, web_app: bool = False):
         
         # Store hours
         if yelp_fusion_api_business_details:
-            try: business_data["hours"] = business["hours"]
+            try: business_data["hours"] = yelp_fusion_api_business_details["hours"]
             except Exception as e: print("ERROR GETTING HOURS FROM API", e)
-            try: business_data["is_open_now"] = business["hours"][0]["is_open_now"]
+            try: business_data["is_open_now"] = yelp_fusion_api_business_details["hours"][0]["is_open_now"]
             except Exception as e: print("ERROR GETTING OPEN STATUS FROM API", e)
 
         # Dump business_data JSON object

@@ -30,23 +30,23 @@
                 <input type="text" name="url" autocomplete="off" required placeholder="https://www.yelp.com/biz/..."><br> -->
                 <!-- <label for="num_pages">How Many Pages of Reviews Should I Scan? (0-5):</label>
                 <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br> -->
-                <input type="submit" value="Start Scan (Estimated 15 Seconds)">
+                <br><input type="submit" value="Start Scan (Estimated 15 Seconds)">
             </form>
 
             {% if error_message != "" %}
                 <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
                     {{ '🤖 '+error_message }}
-                </p><br>
+                </p>
             {% else %}
                 <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
                     {{ '🤖 Welcome to QuickYelp! Please provide the necessary information about the business of interest.' }}
-                </p><br>
+                </p>
             {% endif %}
 
             <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
                 {{ "☝️ No business in mind? Try out this link! "}}
-                <a href="{{ sample_link }}" style="color: rgb(0, 136, 255); font-weight: lighter;">{{sample_link}}</a>
-            </p><br>
+                <a href="{{ sample_link }}" style="color: rgb(0, 136, 255); font-weight: lighter;" target="_blank" rel="noopener noreferrer">{{sample_link}} </a>
+            </p>
 
             <!-- <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
                 {{ "❓ To put it simply, it takes more time to retrieve data from more pages. If you're looking for a quick overview, we recommend putting a lower number of pages!" }}
@@ -65,7 +65,7 @@
                     <em style="font-weight: lighter">
                         The application uses three main technologies: the Yelp Fusion API, the OpenAI API, and the LangChain API. To put it simply, Yelp Fusion is utilized
                         to retrieve data, while LangChain allows us to train OpenAI's GPT-3.5 language model using the data we have. To read more, you may visit the
-                        GitHub repo here: <a href="https://github.com/julian-z/QuickYelp" style="color: rgb(0, 136, 255);">QuickYelp</a>
+                        GitHub repo here: <a href="https://github.com/julian-z/QuickYelp" style="color: rgb(0, 136, 255);" target="_blank" rel="noopener noreferrer">QuickYelp</a>
                     </em><br><br>
 
                     🔍 What can I ask it?<br>
@@ -101,7 +101,16 @@
                         This website was developed entirely by Julian Zulfikar as a passion project. If any questions arise, the developer's contact information is at the bottom of the GitHub repo.
                     </em>
                 </p>
-            <br>
+
+            <!-- <div class="business-display" style="width: 100%; max-width: 100%;">
+                <div class="business-photo-container">
+                    <img class="review-photo" src=".././static/images/reviews/felisha.png" alt="Picture" />
+                </div>
+                <div class="business-info">
+                    <p class="business-address" style="font-weight: 700;">{{ "Felisha A." }}</p>
+                    <p class="business-address">{{ "\"QuickYelp is very resourceful as it gives me a great summary of any question I have regarding the restaurant!\"" }}</p>
+                </div>
+            </div> -->
         </div>
     </div>
 
