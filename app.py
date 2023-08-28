@@ -14,6 +14,7 @@ import asyncio
 import bleach
 import random
 import tempfile
+from time import perf_counter, sleep
 import os
 
 from langchain.document_loaders import TextLoader
@@ -26,28 +27,31 @@ from shell import retrieve_yelp_info, format_business_data, run_query
 
 app = Flask(__name__)
 
-# DEVELOPMENT: Uncomment this to test locally (Start Redis server in Ubuntu and set API env vars)
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-app.config['SESSION_TYPE'] = 'redis'
-app.config['SESSION_PERMANENT'] = False
-app.config['SESSION_USE_SIGNER'] = True
-app.config['SESSION_KEY_PREFIX'] = 'quickyelp:'
-app.config['SESSION_REDIS'] = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
-Session(app)
-
-# # PRODUCTION (1/6): Uncomment this for deployment environment
-# app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-# redis_url = urlparse(os.environ.get("REDIS_URL"))
-# app.config['SESSION_TYPE'] = 'redis'
-# app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=10)
-# app.config['SESSION_PERMANENT'] = True
-# app.config['SESSION_USE_SIGNER'] = True
-# app.config['SESSION_KEY_PREFIX'] = 'quickyelp:'
-# app.config['SESSION_REDIS'] = redis_client = redis.Redis(host=redis_url.hostname, port=redis_url.port, password=redis_url.password, ssl=True, ssl_cert_reqs=None)
-# Session(app)
-
 DEBUGGING = False # Avoid utilizing Yelp Fusion and OpenAI
+PRODUCTION = False # Deployment vs local testing
+
+# PRODUCTION (1/6): Setup
+if PRODUCTION:
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+    redis_url = urlparse(os.environ.get("REDIS_URL"))
+    app.config['SESSION_TYPE'] = 'redis'
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=10)
+    app.config['SESSION_PERMANENT'] = True
+    app.config['SESSION_USE_SIGNER'] = True
+    app.config['SESSION_KEY_PREFIX'] = 'quickyelp:'
+    app.config['SESSION_REDIS'] = redis_client = redis.Redis(host=redis_url.hostname, port=redis_url.port, password=redis_url.password, ssl=True, ssl_cert_reqs=None)
+    Session(app)
+
+# DEVELOPMENT: Setup (Start Redis server in Ubuntu and set API env vars)
+else:
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+    app.config['SESSION_TYPE'] = 'redis'
+    app.config['SESSION_PERMANENT'] = False
+    app.config['SESSION_USE_SIGNER'] = True
+    app.config['SESSION_KEY_PREFIX'] = 'quickyelp:'
+    app.config['SESSION_REDIS'] = redis.StrictRedis(host='127.0.0.1', port=6379, db=0)
+    Session(app)
+
 AI_REPLIES = [
     "Sorry, the location should contain at least 1 character and at most 250 characters.",
     "Uh-oh! The length of the location you provided doesn't meet the required range (1-250 characters).",
@@ -87,26 +91,28 @@ STARS = {
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    global DEBUGGING, AI_REPLIES, SAMPLE_LINKS, STARS
+    global DEBUGGING, PRODUCTION, AI_REPLIES, SAMPLE_LINKS, STARS
     chat_history = []
 
-    # # PRODUCTION (2/6): Rate limiting
-    # uid = get_unique_uid(request)
-    # cur_rate = redis_client.get(uid)
-    # if cur_rate and int(cur_rate) >= 5:
-    #     return handle_rate_limit_error()
+    # PRODUCTION (2/6): Rate limiting
+    if PRODUCTION:
+        uid = get_unique_uid(request)
+        cur_rate = redis_client.get(uid)
+        if cur_rate and int(cur_rate) >= 5:
+            return handle_rate_limit_error()
 
     if request.method == "POST":
 
-        # # PRODUCTION (3/6): Rate limiting
-        # if not redis_client.exists(uid):
-        #     redis_client.setex(uid, 60, 1)
-        # else:
-        #     redis_client.incr(uid)
-        #     if int(redis_client.get(uid)) >= 5:
-        #         redis_client.expire(uid, 30)
-        #     else:
-        #         redis_client.expire(uid, 60)
+        # PRODUCTION (3/6): Rate limiting
+        if PRODUCTION:
+            if not redis_client.exists(uid):
+                redis_client.setex(uid, 60, 1)
+            else:
+                redis_client.incr(uid)
+                if int(redis_client.get(uid)) >= 5:
+                    redis_client.expire(uid, 30)
+                else:
+                    redis_client.expire(uid, 60)
 
         # Handle URL/Number popup
         if "name" in request.form and "location" in request.form:
@@ -120,6 +126,8 @@ def index():
 
             # Perform data scraping here using the provided URL and num_pages
             else:
+                start_time = perf_counter()
+
                 initial_response = None
 
                 if not DEBUGGING:             
@@ -177,7 +185,7 @@ def index():
                     import time
                     for i in range(2):
                         print("RETRIEVING PAGE", i+1)
-                        # time.sleep(6.5)
+                        # sleep(6.5)
                     print("MOCK RETRIEVAL DONE")
                     business_data = {
                         "name": "Bert's Restaurant", 
@@ -203,9 +211,13 @@ def index():
                 business_data["location"] = "" if not business_data["location"] else ', '.join(business_data["location"])
                 initial_response = craft_initial_response(business_data) if not initial_response else initial_response
 
-                # # PRODUCTION (4/6): Chat count
-                # redis_client.incr('chats')
-                # print("CHAT COUNT:", redis_client.get('chats'))
+                # PRODUCTION (4/6): Chat count
+                if PRODUCTION:
+                    redis_client.incr('chats')
+                    print("CHAT COUNT:", redis_client.get('chats'))
+
+                end_time = perf_counter()
+                print("Elapsed time: ", end_time-start_time)
 
                 return render_template("chat.html", initial_response=initial_response, business_data=business_data)
         
@@ -253,8 +265,7 @@ def index():
                         
                     else:
                         replies = ["Certainly!", "I'm here to help!", "Ask me anything!", "I am QuickYelp!"]
-                        import time
-                        time.sleep(1)
+                        sleep(1)
                         chatbot_reply = random.choice(replies)
             
             # Query is too long
@@ -274,12 +285,13 @@ def index():
         if session.get('review_db'):
             session.pop('review_db')
         
-        # # PRODUCTION (5/6): Uncomment this for deployment, keep commented if testing locally
-        # if redis_client:
-        #     if redis_client.exists('info_db'):
-        #         redis_client.delete('info_db')
-        #     if redis_client.exists('review_db'):
-        #         redis_client.delete('review_db')
+        # PRODUCTION (5/6): Uncomment this for deployment, keep commented if testing locally
+        if PRODUCTION:    
+            if redis_client:
+                if redis_client.exists('info_db'):
+                    redis_client.delete('info_db')
+                if redis_client.exists('review_db'):
+                    redis_client.delete('review_db')
     except Exception as e:
         print("ERROR REMOVING DATABASES FROM SESSION", e)
         raise e
@@ -328,12 +340,13 @@ def cleanup():
         if session.get('review_db'):
             session.pop('review_db')
         
-        # # PRODUCTION (6/6): Uncomment this for deployment, keep commented if testing locally
-        # if redis_client:
-        #     if redis_client.exists('info_db'):
-        #         redis_client.delete('info_db')
-        #     if redis_client.exists('review_db'):
-        #         redis_client.delete('review_db')
+        # PRODUCTION (6/6): Uncomment this for deployment, keep commented if testing locally
+        if PRODUCTION:
+            if redis_client:
+                if redis_client.exists('info_db'):
+                    redis_client.delete('info_db')
+                if redis_client.exists('review_db'):
+                    redis_client.delete('review_db')
     except Exception as e:
         print("ERROR REMOVING DATABASES FROM SESSION", e)
         raise e
