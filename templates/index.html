@@ -18,7 +18,7 @@
     <div class="popup" id="popup">
         <div class="popup-content">
             <h2 style="color: black; font-weight: bold; text-align: center; font-size: 1.5rem; margin: 0rem 0rem 1rem 0rem;">
-                QuickYelp - AI Yelp Review Scanner
+                QuickYelp - AI Chatbot 📝
             </h2>
             <form method="post">
                 <label for="name">Business Name</label>
@@ -30,8 +30,12 @@
                 <input type="text" name="url" autocomplete="off" required placeholder="https://www.yelp.com/biz/..."><br> -->
                 <!-- <label for="num_pages">How Many Pages of Reviews Should I Scan? (0-5):</label>
                 <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br> -->
-                <br><input type="submit" value="Start Scan (Estimated 15 Seconds)">
+                <br><input type="submit" value="Start Scan">
             </form>
+
+            <!-- <br><p class="chatbot-message" style="width: 100%; max-width: 100%; color: white; background-color: rgb(123, 67, 67);">
+                {{ "🚧 As of 9/1/2023 at 9 PM PST, the Yelp Fusion API is not responding, thus QuickYelp is currently down. We apologize for any inconvenience!" }}
+            </p> -->
 
             {% if error_message != "" %}
                 <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
@@ -42,15 +46,12 @@
                     {{ '🤖 Welcome to QuickYelp! Please provide the necessary information about the business of interest.' }}
                 </p>
             {% endif %}
+            <br>
 
             <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
                 {{ "☝️ No business in mind? Try out this link! "}}
                 <a href="{{ sample_link }}" style="color: rgb(0, 136, 255); font-weight: lighter;" target="_blank" rel="noopener noreferrer">{{sample_link}} </a>
-            </p>
-
-            <!-- <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
-                {{ "❓ To put it simply, it takes more time to retrieve data from more pages. If you're looking for a quick overview, we recommend putting a lower number of pages!" }}
-            </p><br> -->
+            </p><br>
 
             <br>
                 <p class="chatbot-message" style="width: 100%; max-width: 100%; overflow: auto;">
@@ -136,7 +137,10 @@
                 event.preventDefault();
 
                 const chatbotMessage = document.querySelector(".popup-content .chatbot-message");
-                chatbotMessage.textContent = `📶 Searching on Yelp for this business... `;
+                chatbotMessage.textContent = `📶 Searching on Yelp for this business...`;
+
+                const startScanButton = document.querySelector('input[type="submit"][value="Start Scan"]');
+                startScanButton.value = 'Scanning... (Estimated 15 Seconds)'
 
                 const loadingAnimation = document.createElement("span");
                 loadingAnimation.className = "loading-animation";
