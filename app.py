@@ -10,7 +10,6 @@ from urllib.parse import urlparse
 from datetime import timedelta
 import redis
 
-import asyncio
 import bleach
 import random
 import tempfile
@@ -23,12 +22,12 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 
-from shell import retrieve_yelp_info, format_business_data, run_query
+from shell import retrieve_yelp_info, format_business_data, run_query, merge_queries
 
 app = Flask(__name__)
 
 DEBUGGING = False # Avoid utilizing Yelp Fusion and OpenAI
-PRODUCTION = False # Deployment vs local testing
+PRODUCTION = True # Deployment vs local testing
 
 # PRODUCTION (1/6): Setup
 if PRODUCTION:
@@ -100,6 +99,8 @@ def index():
         cur_rate = redis_client.get(uid)
         if cur_rate and int(cur_rate) >= 5:
             return handle_rate_limit_error()
+    else:
+        uid = "DEV"
 
     if request.method == "POST":
 
@@ -234,7 +235,8 @@ def index():
                 for word in wordset:
                     if word in query.lower():
                         query = '*' * len(query)
-                        chatbot_reply = f"Your message has been flagged: \"{word[0]}{'*'*(len(word)-1)}\" ❌"
+                        session[f"{uid}_cur"] = 0
+                        chatbot_reply = f"Notice: Your message \"{word[0]}{'*'*(len(word)-1)}\" has been flagged. ❌"
                         break
                 else:
                     if not DEBUGGING:
@@ -244,24 +246,64 @@ def index():
                         info_db = session.get('info_db')
                         review_db = session.get('review_db')
                         if not info_db or not review_db:
+                            session[f"{uid}_cur"] = 0
                             chatbot_reply = "Notice: Chatbot data has failed to load, the chat may have reached its 10 minute time limit. Please return to the homepage and try again. To read why this time limit is in place, read via the popup on the homepage. ❌"
                             if not info_db:
                                 print("INFO_DB NOT FOUND IN SESSION")
                             if not review_db:
                                 print("REVIEW_DB NOT FOUND IN SESSION")
-                        else:
-                            try:
-                                # Create FAISS database
-                                info_db = FAISS.deserialize_from_bytes(embeddings=OpenAIEmbeddings(), serialized=info_db)
-                                review_db = FAISS.deserialize_from_bytes(embeddings=OpenAIEmbeddings(), serialized=review_db)
+                        else:                            
+                            # uid_cur = Current message to send
+                            # - 1: Send information message
+                            # - 2: Send review message
+                            # - 3: Send merged
+                            cur_msg = session.get(f"{uid}_cur")
+                            session[f"{uid}_cur"] = cur_msg+1 if cur_msg != None else 1
 
-                                # Query using LangChain's RetrievalQA
-                                info_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0.5), chain_type="stuff", retriever=info_db.as_retriever())
-                                review_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0.5), chain_type="stuff", retriever=review_db.as_retriever())
-                                chatbot_reply = asyncio.run(run_query(info_qa, review_qa, query))
-                            except Exception as e:
-                                chatbot_reply = "Notice: Chatbot has failed to query, the chat may have reached its 10 minute time limit. Please return to the homepage and try again. To read why this time limit is in place, read via the popup on the homepage. ❌"
-                                print(repr(e))
+                            # If we have not searched the information database yet
+                            if session.get(f"{uid}_cur") == 1:
+                                try:
+                                    # Create FAISS database
+                                    info_db = FAISS.deserialize_from_bytes(embeddings=OpenAIEmbeddings(), serialized=info_db)
+
+                                    # Query using LangChain's RetrievalQA
+                                    info_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0, model="gpt-4"), chain_type="stuff", retriever=info_db.as_retriever())
+                                    res_1 = run_query(info_qa, query)
+                                    session[f"{uid}_res_1"] = res_1
+                                    chatbot_reply = f"Based on Yelp's information:\n{res_1}"
+                                except Exception as e:
+                                    session[f"{uid}_cur"] = 0
+                                    chatbot_reply = "Notice: Chatbot has failed to query, the chat may have reached its 10 minute time limit. Please return to the homepage and try again. To read why this time limit is in place, read via the popup on the homepage. ❌"
+                                    print(repr(e))
+
+                            # If we have not searched the review database yet
+                            elif session.get(f"{uid}_cur") == 2:
+                                try:
+                                    # Create FAISS database
+                                    review_db = FAISS.deserialize_from_bytes(embeddings=OpenAIEmbeddings(), serialized=review_db)
+
+                                    # Query using LangChain's RetrievalQA
+                                    review_qa = RetrievalQA.from_chain_type(llm=ChatOpenAI(temperature=0, model="gpt-4"), chain_type="stuff", retriever=review_db.as_retriever())
+                                    res_2 = run_query(review_qa, query)
+                                    session[f"{uid}_res_2"] = res_2
+                                    chatbot_reply = f"Based on Yelp's reviews:\n{res_2}"
+                                except Exception as e:
+                                    session[f"{uid}_cur"] = 0
+                                    chatbot_reply = "Notice: Chatbot has failed to query, the chat may have reached its 10 minute time limit. Please return to the homepage and try again. To read why this time limit is in place, read via the popup on the homepage. ❌"
+                                    print(repr(e))
+                            
+                            # Else, merge both
+                            elif session.get(f"{uid}_cur") == 3:
+                                res_1 = session[f"{uid}_res_1"]
+                                res_2 = session[f"{uid}_res_2"]
+                                chatbot_reply = merge_queries(res_1, res_2, query)
+                                session.pop(f"{uid}_res_1")
+                                session.pop(f"{uid}_res_2")
+                                session[f"{uid}_cur"] = 0
+                            
+                            else:
+                                chatbot_reply = "Notice: An unknown error has occurred while trying to answer your query. Please try again or restart the chat. ❌"
+                                session[f"{uid}_cur"] = 0
                         
                     else:
                         replies = ["Certainly!", "I'm here to help!", "Ask me anything!", "I am QuickYelp!"]
@@ -270,7 +312,8 @@ def index():
             
             # Query is too long
             else:
-                chatbot_reply = f"Sorry! Your message ({len(query)} characters) is too long. The maximum is 200 characters."
+                session[f"{uid}_cur"] = 0
+                chatbot_reply = f"Notice: Sorry! Your message ({len(query)} characters) is too long. The maximum is 200 characters."
 
             # Append sanitized query and chatbot reply, return to React
             chat_history = request.form.getlist("chat_history[]")
@@ -284,6 +327,12 @@ def index():
             session.pop('info_db')
         if session.get('review_db'):
             session.pop('review_db')
+        if session.get(f"{uid}_cur"):
+            session.pop(f"{uid}_cur")
+        if session.get(f"{uid}_res_1"):
+            session.pop(f"{uid}_res_1")
+        if session.get(f"{uid}_res_2"):
+            session.pop(f"{uid}_res_2")
         
         # PRODUCTION (5/6): Uncomment this for deployment, keep commented if testing locally
         if PRODUCTION:    
@@ -292,6 +341,12 @@ def index():
                     redis_client.delete('info_db')
                 if redis_client.exists('review_db'):
                     redis_client.delete('review_db')
+                if redis_client.exists(f"{uid}_cur"):
+                    redis_client.delete(f"{uid}_cur")
+                if redis_client.exists(f"{uid}_res_1"):
+                    redis_client.delete(f"{uid}_res_1")
+                if redis_client.exists(f"{uid}_res_2"):
+                    redis_client.delete(f"{uid}_res_2")
     except Exception as e:
         print("ERROR REMOVING DATABASES FROM SESSION", e)
         raise e

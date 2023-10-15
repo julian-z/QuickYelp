@@ -8,7 +8,6 @@ from unidecode import unidecode
 from lxml import html
 from html import unescape
 import urllib.parse
-import asyncio
 
 import os
 import re
@@ -95,6 +94,7 @@ def retrieve_yelp_info(name: str, location: str, web_app: bool = False):
                 break
             else:
                 print("API (1) STATUS CODE", api_call.status_code)
+                print(api_call.json())
                 attempts += 1
     except Exception as e:
         print("ERROR CALLING FUSION (1):", e)
@@ -332,24 +332,23 @@ def validate_url(url):
         re.match(r'^https://yelp\.to/[a-zA-Z0-9]+$', url)
 
 
-async def call_info_qa(info_qa, query):
-    return await asyncio.to_thread(info_qa.run, query)
-
-async def call_review_qa(review_qa, query):
-    return await asyncio.to_thread(review_qa.run, query)
-
-async def run_query(info_qa, review_qa, query):
+def run_query(qa, query):
     """
-    Asynchronously perform the two LangChain queries.
+    Perform a query on the given QA chain.
     """
-    # LangChain queries (information and review chains)
-    info_task = call_info_qa(info_qa, query)
-    review_task = call_review_qa(review_qa, query)
-    
-    # Concurrently execute both tasks
-    res_1, res_2 = await asyncio.gather(info_task, review_task)
+    print('-'*50)
+    print("QUERY:", query)
+    print("CALLING QA CHAIN")
+    res = qa.run(query)
+    print("RECEIVED ANSWER:", res[:50]+'...')
+    print('-'*50)
+    return res
 
-    # Merge the two chatbot replies
+
+def merge_queries(res_1, res_2, query):
+    """
+    Merge the two LangChain results.
+    """
     merge_request = {
         "role": "system", 
         "content": f"Please merge these two chatbot replies to answer the query: {query}\n\n" + \
@@ -358,11 +357,18 @@ async def run_query(info_qa, review_qa, query):
                    "If either reply says they do not know the answer, please disregard it.\n" + \
                    "If both replies do not know the answer, please say either message."
     }
+
+    print('-'*50)
+    print("CALLING OPENAI API TO MERGE")
     llm = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo", 
+        model="gpt-4", 
         temperature=0, 
         messages=[merge_request]
     )
+    print("RECEIVED OPENAI MERGED MESSAGE")
+    print("RESULT:", llm.choices[0].message.content[:50]+'...')
+    print('-'*50)
+
     return llm.choices[0].message.content
 
 
@@ -457,7 +463,8 @@ if __name__ == "__main__":
 
         # Asynchronously call info and review chains
         start = time.perf_counter()
-        res = asyncio.run(run_query(info_qa, review_qa, query))
+        res_1, res_2 = run_query(info_qa, query), run_query(review_qa, query)
+        res = merge_queries(res_1, res_2, query)
         end = time.perf_counter()
         print("Elapsed time to query: ", end-start)
         print(res)

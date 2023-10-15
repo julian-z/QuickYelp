@@ -36,6 +36,13 @@
             <!-- <br><p class="chatbot-message" style="width: 100%; max-width: 100%; color: white; background-color: rgb(123, 67, 67);">
                 {{ "🚧 As of 9/1/2023 at 9 PM PST, the Yelp Fusion API is not responding, thus QuickYelp is currently down. We apologize for any inconvenience!" }}
             </p> -->
+            <br><p class="chatbot-message" style="width: 100%; max-width: 100%; background-color: rgb(235, 246, 255);">
+                {{ "🚧 Update Log (10/14/2023)" }}<br>
+                <elem style="font-weight: 400;">
+                    {{ "- Migrated to GPT-4 over GPT-3.5 to ensure quicker performance" }}<br>
+                    {{ "- Chatbot now sends 3 replies: based on business information, another based on reviews, then finally merging the two" }}
+                </elem>
+            </p><br>
 
             {% if error_message != "" %}
                 <br><p class="chatbot-message" style="width: 100%; max-width: 100%;">
@@ -65,7 +72,7 @@
                     🔍 How does it work?<br>
                     <em style="font-weight: lighter">
                         The application uses three main technologies: the Yelp Fusion API, the OpenAI API, and the LangChain API. To put it simply, Yelp Fusion is utilized
-                        to retrieve data, while LangChain allows us to train OpenAI's GPT-3.5 language model using the data we have. To read more, you may visit the
+                        to retrieve data, while LangChain allows us to train OpenAI's GPT-4 language model using the data we have. To read more, you may visit the
                         GitHub repo here: <a href="https://github.com/julian-z/QuickYelp" style="color: rgb(0, 136, 255);" target="_blank" rel="noopener noreferrer">QuickYelp</a>
                     </em><br><br>
 
