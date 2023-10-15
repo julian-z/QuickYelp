@@ -29,7 +29,7 @@ app = Flask(__name__)
 DEBUGGING = False # Avoid utilizing Yelp Fusion and OpenAI
 PRODUCTION = True # Deployment vs local testing
 
-# PRODUCTION (1/6): Setup
+# PRODUCTION (1/7): Setup
 if PRODUCTION:
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
     redis_url = urlparse(os.environ.get("REDIS_URL"))
@@ -93,7 +93,7 @@ def index():
     global DEBUGGING, PRODUCTION, AI_REPLIES, SAMPLE_LINKS, STARS
     chat_history = []
 
-    # PRODUCTION (2/6): Rate limiting
+    # PRODUCTION (2/7): Rate limiting
     if PRODUCTION:
         uid = get_unique_uid(request)
         cur_rate = redis_client.get(uid)
@@ -103,20 +103,20 @@ def index():
         uid = "DEV"
 
     if request.method == "POST":
-
-        # PRODUCTION (3/6): Rate limiting
-        if PRODUCTION:
-            if not redis_client.exists(uid):
-                redis_client.setex(uid, 60, 1)
-            else:
-                redis_client.incr(uid)
-                if int(redis_client.get(uid)) >= 5:
-                    redis_client.expire(uid, 30)
-                else:
-                    redis_client.expire(uid, 60)
-
         # Handle URL/Number popup
         if "name" in request.form and "location" in request.form:
+
+            # PRODUCTION (3/7): Rate limiting
+            if PRODUCTION:
+                if not redis_client.exists(uid):
+                    redis_client.setex(uid, 60, 1)
+                else:
+                    redis_client.incr(uid)
+                    if int(redis_client.get(uid)) >= 5:
+                        redis_client.expire(uid, 30)
+                    else:
+                        redis_client.expire(uid, 60)
+
             # Initial form submission for starting the chatbot
             name = request.form.get("name")
             location = request.form.get("location")
@@ -212,7 +212,7 @@ def index():
                 business_data["location"] = "" if not business_data["location"] else ', '.join(business_data["location"])
                 initial_response = craft_initial_response(business_data) if not initial_response else initial_response
 
-                # PRODUCTION (4/6): Chat count
+                # PRODUCTION (4/7): Chat count
                 if PRODUCTION:
                     redis_client.incr('chats')
                     print("CHAT COUNT:", redis_client.get('chats'))
@@ -262,6 +262,21 @@ def index():
 
                             # If we have not searched the information database yet
                             if session.get(f"{uid}_cur") == 1:
+
+                                # PRODUCTION (5/7): Rate limiting
+                                if PRODUCTION:
+                                    if not redis_client.exists(uid):
+                                        redis_client.setex(uid, 60, 1)
+                                    else:
+                                        redis_client.incr(uid)
+                                        if int(redis_client.get(uid)) >= 5:
+                                            redis_client.expire(uid, 30)
+                                        else:
+                                            redis_client.expire(uid, 60)
+                                    cur_rate = redis_client.get(uid)
+                                    if cur_rate and int(cur_rate) >= 5:
+                                        return handle_rate_limit_error()
+                                
                                 try:
                                     # Create FAISS database
                                     info_db = FAISS.deserialize_from_bytes(embeddings=OpenAIEmbeddings(), serialized=info_db)
@@ -334,7 +349,7 @@ def index():
         if session.get(f"{uid}_res_2"):
             session.pop(f"{uid}_res_2")
         
-        # PRODUCTION (5/6): Uncomment this for deployment, keep commented if testing locally
+        # PRODUCTION (6/7): Uncomment this for deployment, keep commented if testing locally
         if PRODUCTION:    
             if redis_client:
                 if redis_client.exists('info_db'):
@@ -364,6 +379,9 @@ def handle_rate_limit_error():
             return render_template("index.html", error_message=error_message, sample_link=random.choice(SAMPLE_LINKS))
         else:
             print("RATE LIMIT EXCEEDED IN CHAT")
+            global PRODUCTION
+            uid = "DEV" if not PRODUCTION else get_unique_uid(request)
+            session[f"{uid}_cur"] = 0
             query = request.form.get("query")
 
             if len(query) <= 200:
@@ -395,7 +413,7 @@ def cleanup():
         if session.get('review_db'):
             session.pop('review_db')
         
-        # PRODUCTION (6/6): Uncomment this for deployment, keep commented if testing locally
+        # PRODUCTION (7/7): Uncomment this for deployment, keep commented if testing locally
         if PRODUCTION:
             if redis_client:
                 if redis_client.exists('info_db'):

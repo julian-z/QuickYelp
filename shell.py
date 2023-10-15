@@ -351,9 +351,9 @@ def merge_queries(res_1, res_2, query):
     """
     merge_request = {
         "role": "system", 
-        "content": f"Please merge these two chatbot replies to answer the query: {query}\n\n" + \
-                   f"Reply 1 (Based on Yelp's business information): {res_1}\n\n" + \
-                   f"Reply 2 (Based on Yelp reviews): {res_2}\n\n" + \
+        "content": f"Merge these two chatbot replies to answer the query: {query}\n\n" + \
+                   f"Reply 1: {res_1}\n\n" + \
+                   f"Reply 2: {res_2}\n\n" + \
                    "If either reply says they do not know the answer, please disregard it.\n" + \
                    "If both replies do not know the answer, please say either message."
     }
