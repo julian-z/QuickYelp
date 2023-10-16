@@ -14,23 +14,6 @@
 <body>
     <div id="react-chat"></div>
 
-    <script>
-        // Event listener for cleaning up Redis
-        window.addEventListener("beforeunload", async () => {
-            try {
-                const response = await fetch('/cleanup', {
-                    method: 'POST'
-                });
-        
-                if (!response.ok) {
-                    console.error("CLEANUP REQUEST FAILED FROM JS");
-                }
-            } catch (error) {
-                console.error("CLEANUP REQUEST ERROR FROM JS:", error);
-            }
-        });
-    </script>
-
     <script type="text/babel">
         // Inherit React component
         class ChatApp extends React.Component {
@@ -275,7 +258,7 @@
                                                 entry.startsWith("USR") ? "animate-fade-in-right" : "animate-fade-in-left"
                                             }`}
 
-                                            style={entry.startsWith("BLU") ? { backgroundColor: "rgb(235, 246, 255)" } : {}}
+                                            style={entry.startsWith("BLU") ? { backgroundColor: "rgb(235, 246, 255)", animation: "fading-blu 5s ease-in-out infinite"} : {}}
                                         >
                                             {entry.startsWith("BOT") && <a href="{{ business_data['url'] }}" target="_blank" rel="noopener noreferrer"><img className="chat-logo" src=".././static/images/yelp_burst.png" alt="Yelp"/></a>}
                                             {entry.startsWith("BLU") && "🔍 "}
@@ -298,7 +281,7 @@
                                         placeholder="What do the positive reviews say?"
                                         value={this.state.query}
                                         onChange={this.handleInputChange}
-                                        autocomplete="off"
+                                        autoComplete="off"
                                         required
                                         disabled={this.state.waiting}
                                     />
@@ -307,7 +290,7 @@
                                         <button onClick={this.handleUp} className="resize"><img src=".././static/images/up.png" alt="Up"></img></button>
                                     </div>
                                 </div>
-                                <input type="submit" value="Ask" disabled={this.state.waiting}/>
+                                <input id="query-submit" type="submit" value="Ask" disabled={this.state.waiting}/>
                             </form>
                         </div>
                     </div>
@@ -317,6 +300,30 @@
     
         // Render the ChatApp component
         ReactDOM.render(<ChatApp />, document.getElementById("react-chat"));
+    </script>
+
+    <script>
+        // Event listener for cleaning up Redis
+        window.addEventListener("beforeunload", async () => {
+            try {
+                const response = await fetch('/cleanup', {
+                    method: 'POST'
+                });
+        
+                if (!response.ok) {
+                    console.error("CLEANUP REQUEST FAILED FROM JS");
+                }
+            } catch (error) {
+                console.error("CLEANUP REQUEST ERROR FROM JS:", error);
+            }
+        });
+
+        // Event listener for enter key
+        window.addEventListener('keypress', (event) => {
+            if (event.key == 'Enter') {
+                document.querySelector("#query-submit").click();
+            }
+        });
     </script>
 </body>
 </html>

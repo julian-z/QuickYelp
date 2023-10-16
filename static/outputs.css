@@ -1087,7 +1087,7 @@ input[type="submit"] {
   right: 0;
   bottom: 0;
   background-color: rgb(255, 255, 255);
-  box-shadow: 0 0 10% 10% rgb(211, 144, 144);
+  box-shadow: 0 0 10% 10% rgb(224 7 7);
   z-index: 9999;
 
   display: flex;
@@ -1101,7 +1101,7 @@ input[type="submit"] {
 
 #intro.hidden {
   transform: translateY(120%);
-  background-color: rgb(195, 43, 43);
+  background-color: rgb(224 7 7);
 }
 
 #intro img {
@@ -1160,6 +1160,18 @@ input[type="submit"] {
   }
   100% {
     opacity: 0.5;
+  }
+}
+
+@keyframes fading-blu {
+  0% {
+    background-color: rgb(235, 246, 255);
+  }
+  50% {
+    background-color: rgb(207, 234, 255);
+  }
+  100% {
+    background-color: rgb(235, 246, 255);
   }
 }
 
