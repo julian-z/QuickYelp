@@ -345,7 +345,7 @@ def run_query(qa, query):
     return res
 
 
-def merge_queries(res_1, res_2, query):
+def merge_queries_GPT(res_1, res_2, query):
     """
     Merge the two LangChain results.
     """
@@ -370,6 +370,20 @@ def merge_queries(res_1, res_2, query):
     print('-'*50)
 
     return llm.choices[0].message.content
+
+
+def merge_queries(res_1, res_2, query):
+    """
+    Merge the two LangChain results (not using OpenAI).
+    """
+    print('-'*50)
+    print("MERGING")
+    time.sleep(0.5)
+    res = f"Based on Yelp's information:\n{res_1}\n\nBased on Yelp's reviews:\n{res_2}"
+    print("DONE")
+    print('-'*50)
+
+    return res
 
 
 if __name__ == "__main__":

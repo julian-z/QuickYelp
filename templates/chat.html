@@ -53,6 +53,7 @@
                     waiting: initWait,
                     about: false,
                     headerHidden: false,
+                    currentHeight: 100,
                 };
                 this.chatLogRef = React.createRef();
                 this.businessName = "{{ business_data['name'] | safe }}";
@@ -69,6 +70,7 @@
                 }));
             };
 
+            
             // Toggle the Header
             toggleHeader = () => {
                 this.setState((prevState) => ({
@@ -201,10 +203,26 @@
             };
 
 
+            // Chat box resize buttons (up)
+            handleUp = (event) => {
+                event.preventDefault();
+                this.setState((prevState) => ({
+                    currentHeight: prevState.currentHeight > 60 ? prevState.currentHeight - 2 : prevState.currentHeight,
+                }));
+            }
+
+            // Chat box resize buttons (down)
+            handleDown = (event) => {
+                event.preventDefault();
+                this.setState((prevState) => ({
+                    currentHeight: prevState.currentHeight < 100 ? prevState.currentHeight + 2 : prevState.currentHeight,
+                }));
+            }
+
             // Render to the DOM
             render() {
                 return (
-                    <div id="chat-container" className={this.state.about ? "small-width" : ""}>
+                    <div id="chat-container" className={this.state.about ? "small-width" : ""} style={ {height: this.state.currentHeight.toString()+'vh'} }>
                         <div className={`header ${this.state.headerHidden ? "hidden" : ""}`}>
                             <a href="/" className="logo">
                                 <img className="logo" src=".././static/images/quickyelp_logo_black_bordered.png" alt="QuickYelp"/>
@@ -268,20 +286,26 @@
                                 ))}
                             </div>
                         </div>
-                        
+
                         <div className="query-bar">
                             <form id="chat-form" onSubmit={this.handleSubmit}>
-                                <input
-                                    type="text"
-                                    name="query"
-                                    id="query"
-                                    placeholder="What do the positive reviews say?"
-                                    value={this.state.query}
-                                    onChange={this.handleInputChange}
-                                    autocomplete="off"
-                                    required
-                                    disabled={this.state.waiting}
-                                />
+                                <div id="chat-input-div">
+                                    <input
+                                        type="text"
+                                        name="query"
+                                        id="query"
+                                        placeholder="What do the positive reviews say?"
+                                        value={this.state.query}
+                                        onChange={this.handleInputChange}
+                                        autocomplete="off"
+                                        required
+                                        disabled={this.state.waiting}
+                                    />
+                                    <div className="resize-buttons">
+                                        <button onClick={this.handleDown} className="resize"><img src=".././static/images/down.png" alt="Down"></img></button>
+                                        <button onClick={this.handleUp} className="resize"><img src=".././static/images/up.png" alt="Up"></img></button>
+                                    </div>
+                                </div>
                                 <input type="submit" value="Ask" disabled={this.state.waiting}/>
                             </form>
                         </div>

@@ -1022,8 +1022,23 @@ input[type="submit"]:hover {
   }
 }
 
+@keyframes fade-out-left {
+  0% {
+      opacity: 1;
+      transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+}
+
 .animate-fade-in-left {
   animation: fade-in-left 0.3s ease-out;
+}
+
+.animate-fade-out-left {
+  animation: fade-out-left 0.3s ease-out;
 }
 
 @keyframes fade-in-right {
@@ -1063,6 +1078,91 @@ input[type="submit"] {
   margin: 0.5rem;
 }
 
+#intro {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgb(209, 69, 69);
+  box-shadow: 0 0 10% 10% rgb(211, 144, 144);
+  z-index: 9999;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  transition: transform 3s ease-in-out, background-color 3s ease-in-out;
+  transition-delay: 1s;
+}
+
+#intro.hidden {
+  transform: translateY(120%);
+  background-color: rgb(211, 144, 144);
+}
+
+#intro img {
+  width: 25vw;
+  animation: fade-in-up 1s ease-in-out;
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(50%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0%);
+  }
+}
+
+.resize-buttons {
+  display: none;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem;
+  z-index: 9999;
+}
+
+.resize {
+  background-color: rgb(159, 159, 159);
+  box-shadow: 0 0 10px rgb(159, 159, 159);
+  border-radius: 25%;
+  opacity: 0.5;
+  padding: 0.5rem;
+
+  animation: fading 3s ease-in-out infinite;
+}
+
+.resize img {
+  width: 1.5rem;
+}
+
+#chat-input-div {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+@keyframes fading {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
 /* MOBILE DEVICES */
 @media (max-width: 768px) {
   .logo {
@@ -1091,9 +1191,9 @@ input[type="submit"] {
     font-size: 0.75rem;
   }
 
-  #chat-container {
+  /* #chat-container {
     height: 88vh;
-  }
+  } */
 
   .business-yelp {
     width: 5vh;
@@ -1111,5 +1211,14 @@ input[type="submit"] {
 
   input[type="submit"] {
     padding: 0.5rem 1rem;
+  }
+
+  #intro img {
+    height: 20vh;
+    width: auto;
+  }
+
+  .resize-buttons {
+    display: flex;
   }
 }
