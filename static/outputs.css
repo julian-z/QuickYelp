@@ -1086,7 +1086,7 @@ input[type="submit"] {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgb(209, 69, 69);
+  background-color: rgb(255, 255, 255);
   box-shadow: 0 0 10% 10% rgb(211, 144, 144);
   z-index: 9999;
 
@@ -1101,7 +1101,7 @@ input[type="submit"] {
 
 #intro.hidden {
   transform: translateY(120%);
-  background-color: rgb(211, 144, 144);
+  background-color: rgb(195, 43, 43);
 }
 
 #intro img {
