@@ -10,6 +10,9 @@
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="react-chat"></div>
@@ -203,36 +206,34 @@
                 }));
             }
 
+            // <div className="powered-section">
+            //     <p className="powered-by">
+            //         Powered By:&nbsp;
+            //         <a href="https://fusion.yelp.com/" target="_blank" rel="noopener noreferrer"><img className="powered-logos" src=".././static/images/yelp.png" alt="Yelp Fusion"/> </a>
+            //         <a href="https://openai.com/blog/openai-api" target="_blank" rel="noopener noreferrer"><img className="powered-logos" src=".././static/images/openai.png" alt="OpenAI"/> </a>
+            //         <a href="https://www.langchain.com/" target="_blank" rel="noopener noreferrer"><img className="powered-logos" src=".././static/images/langchain.png" alt="LangChain "/></a>
+            //     </p>
+            //     <p className="powered-by">
+            //         GitHub:&nbsp;
+            //         <a href="https://github.com/julian-z/QuickYelp"><img className="powered-logos" src=".././static/images/sm_github.png" alt="Github Repo"/></a>
+            //     </p>
+            // </div>
             // Render to the DOM
             render() {
-                return (
+                return (                    
                     <div id="chat-container" className={this.state.about ? "small-width" : ""} style={ {height: this.state.currentHeight.toString()+'vh'} }>
                         <div className={`header ${this.state.headerHidden ? "hidden" : ""}`}>
                             <a href="/" className="logo">
                                 <img className="logo" src=".././static/images/quickyelp_logo_black_bordered.png" alt="QuickYelp"/>
                             </a>
-
-                            <div className="powered-section">
-                                <p className="powered-by">
-                                    Powered By:&nbsp;
-                                    <a href="https://fusion.yelp.com/" target="_blank" rel="noopener noreferrer"><img className="powered-logos" src=".././static/images/yelp.png" alt="Yelp Fusion"/> </a>
-                                    <a href="https://openai.com/blog/openai-api" target="_blank" rel="noopener noreferrer"><img className="powered-logos" src=".././static/images/openai.png" alt="OpenAI"/> </a>
-                                    <a href="https://www.langchain.com/" target="_blank" rel="noopener noreferrer"><img className="powered-logos" src=".././static/images/langchain.png" alt="LangChain "/></a>
-                                </p>
-                                <p className="powered-by">
-                                    GitHub:&nbsp;
-                                    <a href="https://github.com/julian-z/QuickYelp"><img className="powered-logos" src=".././static/images/sm_github.png" alt="Github Repo"/></a>
-                                </p>
-                            </div>
                         </div>
 
-                        <button id="toggle-header-button" className="toggle" onClick={this.toggleHeader}>
-                            {this.state.headerHidden ? 
-                                <img id="show-image" src=".././static/images/show_header.png" alt="Show"></img> : 
-                                <img id="hide-image" src=".././static/images/hide_header.png" alt="Hide"></img>}
-                        </button>
-
                         <div id="chat-log-container" ref={this.chatLogRef}>
+                            <button id="toggle-header-button" className="toggle" onClick={this.toggleHeader}>
+                            {this.state.headerHidden ? 
+                                <img id="show-image" src=".././static/images/down.png" alt="Show"></img> : 
+                                <img id="hide-image" src=".././static/images/up.png" alt="Hide"></img>}
+                            </button>
                             <div id="chat-log-content">
                                 {!this.state.chatHistory[0].startsWith("BOTNotice: ") &&
                                 <div className="message-container">
@@ -272,6 +273,19 @@
                         </div>
 
                         <div className="query-bar">
+                            <div className="suggestions animate-fade-in-left">
+                                <p className="question">What are some high protein items?</p>
+                                <p className="question">How are the wait times?</p>
+                                <p className="question">What is their phone number?</p>
+                                <p className="question">How is the customer service?</p>
+                                <p className="question">What are the best dishes here?</p>
+                                <p className="question">Is this place Halal?</p>
+                                <p className="question">Do they take reservations?</p>
+                                <p className="question">I love coffee, do they have that here?</p>
+                                <p className="question">What is the general consensus?</p>
+                                <p className="question">Is this place healthy?</p>
+                                <p className="question">What dish do you recommend?</p>
+                            </div>
                             <form id="chat-form" onSubmit={this.handleSubmit}>
                                 <div id="chat-input-div">
                                     <input
@@ -285,10 +299,6 @@
                                         required
                                         disabled={this.state.waiting}
                                     />
-                                    <div className="resize-buttons">
-                                        <button onClick={this.handleDown} className="resize"><img src=".././static/images/down.png" alt="Down"></img></button>
-                                        <button onClick={this.handleUp} className="resize"><img src=".././static/images/up.png" alt="Up"></img></button>
-                                    </div>
                                 </div>
                                 <input id="query-submit" type="submit" value="Ask" disabled={this.state.waiting}/>
                             </form>
@@ -297,6 +307,10 @@
                 );
             }
         }
+        // <div className="resize-buttons">
+        //     <button onClick={this.handleDown} className="resize"><img src=".././static/images/down.png" alt="Down"></img></button>
+        //     <button onClick={this.handleUp} className="resize"><img src=".././static/images/up.png" alt="Up"></img></button>
+        // </div>
     
         // Render the ChatApp component
         ReactDOM.render(<ChatApp />, document.getElementById("react-chat"));

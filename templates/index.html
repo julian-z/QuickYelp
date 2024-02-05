@@ -1,154 +1,335 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>QuickYelp - Home</title>
+    <meta charset="utf-8">
+    <meta name="title" content="QuickYelp: Scan through the reviews of any business on Yelp and ask questions"/>
+    <meta name="description" content="QuickYelp is an AI chatbot which is trained on the reviews and information of any given Yelp business. Streamline your Yelp selection using our platform!"/>
+    <meta name="keywords" content="yelp,review scanner,review chatbot,quickyelp,quick yelp,ai chat,ai,chap gpt,chat gbt,chat gpt 3,chat gpt login,chat gpt website,chat gpt,chat gtp,chat openai,chat,chatai,chatbot gpt,chatg,chatgpt login,chatgpt,gpt chat,open ai,openai chat,openai chatgpt,openai"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='outputs.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='landing.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+    <title>QuickYelp - AI Yelp Chatbot</title>
 </head>
+
 <body>
-    <div id="intro">
-        <img src=".././static/images/quickyelp_logo_black_bordered.png">
-    </div>
-    
-    <div id="react-chat"></div>
-    
-    <div class="popup-background" id="popup-background"></div>
+    <header>
+        <a href="#home"><img src="static/images/quickyelp_logo_black.png" alt="QuickYelp" style="width: 5rem; margin: 1vh 1vw;"></a>
 
-    <div class="popup" id="popup">
-        <div class="popup-content">
-            <h2 style="color: black; font-weight: bold; text-align: center; font-size: 1.5rem; margin: 0rem 0rem 1rem 0rem;">
-                QuickYelp - AI Chatbot 📝
-            </h2>
-            <form method="post">
-                <label for="name">Business Name</label>
-                <input type="text" name="name" autocomplete="off" required placeholder="Enter the name of a business on Yelp..."><br>
-                <label for="location">Location<span class="info-icon" id="info-icon">🤔</span></label>
-                <input type="text" name="location" autocomplete="off" required placeholder="Enter the city or address...">
-                <div class="info-popup" id="info-popup"><strong>Examples</strong>: <em>"New York City"</em>, <em>"NYC"</em>, <em>"350 5th Ave, New York, NY 10118"</em>.<br><strong>Constraints</strong>: Must be less than (or equal) to 250 characters.</div>                
-                <!-- <label for="url">Yelp URL:</label>
-                <input type="text" name="url" autocomplete="off" required placeholder="https://www.yelp.com/biz/..."><br> -->
-                <!-- <label for="num_pages">How Many Pages of Reviews Should I Scan? (0-5):</label>
-                <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br> -->
-                <br><input type="submit" value="Start Scan">
-            </form>
+        <!-- 
+            Desktop and Mobile Nav Bars
+            - "desktop-nav" is displayed initially, but hidden when
+            the width is smaller than 1024px. Then, "mobile-nav"
+            is displayed. 
+        -->
+        <nav class="desktop-nav">
+            <a href="#home" style="color: inherit;">Home</a>
+            <a href="#mission" style="color: inherit;">About</a>
+            <a href="#demo" style="color: inherit;">Demo</a>
+            <a href="#faq" style="color: inherit;">FAQ</a>
+        </nav>
 
-            <!-- <br><p class="chatbot-message" style="width: 100%; max-width: 100%; color: white; background-color: rgb(123, 67, 67);">
-                {{ "🚧 As of 9/1/2023 at 9 PM PST, the Yelp Fusion API is not responding, thus QuickYelp is currently down. We apologize for any inconvenience!" }}
-            </p> -->
+        <nav class="mobile-nav">
+            <div class="button-container">
+                <button id="dropdown-button-img"><img src="static/images/dropdown.png" alt="Show Menu"></button>
+                <div class="dropdown-content">
+                    <hr style="width: 0%;">
+                    <a href="#home" style="color:black;">Home</a>
+                    <hr>
+                    <a href="#mission" style="color:black;">About</a>
+                    <hr>
+                    <a href="#demo" style="color:black;">Demo</a>
+                    <hr>
+                    <a href="#faq" style="color:black;">FAQ</a>
+                    <hr style="width: 0%;">
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="page-content">
+        <section id="home">
+            <div class="content">
+                <div class="home-flex">
+                    <!-- <img class="intro-logo" src="static/images/quickyelp_logo_white_bordered.png" style="margin: 1rem;"> -->
+
+                    <div>
+                        <h2 style="text-align: left;">Accelerating Your Yelp Search</h2>
+                        <p>
+                            Utilizing <span style="color: rgb(255, 39, 39);">OpenAI's GPT-4</span> large language model to <span style="color: rgb(255, 39, 39);">scan the reviews</span> of any Yelp business.
+                        </p>
+                    </div>
+
+                    <form method="post">
+                        <label for="name" style="color: rgb(100, 100, 100); font-weight: 400; font-size: 0.75rem;">Business Name</label>
+                        <input type="text" name="name" autocomplete="off" required placeholder="Enter the name of a business on Yelp..."><br>
+                        <label for="location" style="color: rgb(100, 100, 100); font-weight: 400; font-size: 0.75rem;">Location<span class="info-icon" id="info-icon">🤔</span></label>
+                        <input type="text" name="location" autocomplete="off" required placeholder="Enter the city or address...">
+                        <p class="yellow-flag" style="font-size: 0.75rem; display: none; margin:0;" id="info-popup"><strong>Examples</strong>: <em>"New York City"</em>, <em>"NYC"</em>, <em>"350 5th Ave, New York, NY 10118"</em>.<br><strong>Constraints</strong>: Must be less than (or equal) to 250 characters.</p>
+                        {% if error_message != "" %}
+                        <p class="red-flag animate-fade-in-left" id="form-msg" style="font-size: 0.75rem; margin: 0;">
+                            {{ error_message }}
+                        </p>
+                        {% else %}
+                        <p class="blue-flag animate-fade-in-left" id="form-msg" style="font-size: 0.75rem; margin: 0;">
+                            {{ 'Welcome to QuickYelp! Please provide the necessary information about the business of interest.' }}
+                        </p>
+                        {% endif %}    
+                        <p class="red-flag animate-fade-in-left" id="form-msg" style="font-size: 0.75rem; margin: 1rem 0 0 0;">
+                            As of 2/5/24, our review retrieval is not working. We are working to get it fixed -- as of now, QuickYelp's information is limited. We apologize for the inconvenience.
+                        </p>    
+                        <!-- <label for="url">Yelp URL:</label>
+                        <input type="text" name="url" autocomplete="off" required placeholder="https://www.yelp.com/biz/..."><br> -->
+                        <!-- <label for="num_pages">How Many Pages of Reviews Should I Scan? (0-5):</label>
+                        <input type="number" name="num_pages" min="0" max="5" autocomplete="off" required><br> -->
+                        <br>
+                        <input id="start-btn" type="submit" class="red-btn" style="width: 100%; font-weight: 500;" value="Start Scan">
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="mission" style="padding: 2vh 0; background: rgb(255,255,255); background: linear-gradient(152deg, rgba(255,255,255,1) 0%, rgba(148,187,233,1) 100%);">
+            <div style="color: rgb(25, 21, 78);">
+                <h2 style="font-weight: 400; font-size: 3.25rem; color: inherit; margin: 1rem 5vw;">What is <span style="color: rgb(25, 21, 78); text-shadow: 0 0 10px rgba(100, 100, 100, 0.5); font-weight: 600;">QuickYelp</span>?</h2>
+                <div class="section-text anim-on-scroll" style="text-align: center; margin: 0; font-size: 1.25rem;">
+                    <p style="margin: 3vh 5vw; color: rgb(25, 21, 78);">
+                        QuickYelp is a <span style="color: rgb(25, 21, 78); text-shadow: 0 0 10px rgba(100, 100, 100, 0.2); font-weight: 600;">dynamic AI chatbot</span> 
+                        which scans through the <span style="color: rgb(25, 21, 78); text-shadow: 0 0 10px rgba(100, 100, 100, 0.2); font-weight: 600;">information and reviews</span> of a given Yelp business, then answers questions based on its training data. 
+                    </p>
+
+                    <p style="margin: 3vh 5vw; color: rgb(25, 21, 78);">
+                        With this program, users are able to <span style="color: rgb(25, 21, 78); text-shadow: 0 0 10px rgba(100, 100, 100, 0.2); font-weight: 600;">save a ton of time</span> from having to manually read through the reviews themselves. 
+                    </p>
+                    
+                    <p style="margin: 3vh 5vw; color: rgb(25, 21, 78);">
+                        Thus, our goal is to offer an easy and efficient way to retrieve a <span style="color: rgb(25, 21, 78); text-shadow: 0 0 10px rgba(100, 100, 100, 0.2); font-weight: 600;">quick overview of a restaurant</span>, as well as answer questions to the best of its ability.
+                    </p>
+
+                    <p class="yellow-flag anim-on-scroll" style="width: 70%; font-size: 1rem; overflow-wrap: break-word;">
+                        No restaurant in mind? Try using this one!<br>
+                        <a href="{{ sample_link }}" style="color: rgb(0, 136, 255); font-weight: lighter;" target="_blank" rel="noopener noreferrer">{{sample_link}} </a>
+                    </p>
+                </div>
+                <div class="anim-on-scroll" style="margin: 1rem 0; display: flex; flex-direction: row; justify-content: center; align-items: center;">
+                    <button class="white-btn" style="color: white; background-color: rgb(2, 54, 174); font-weight: 500; width: auto; margin: 1rem 1rem; cursor: pointer; align-self: center;" onclick="window.location.href='#home'" type="button">
+                        Try QuickYelp
+                    </button>
+                </div>
+            </div>
+            <img class="anim-on-scroll-left" style="margin: 0 2vw; filter: drop-shadow(0 0 5px rgba(100, 100, 100, 0.5));" src="static/images/preview.png">
+        </section>
+
+        <section style="gap: 1vh;">
+            <h2 style="font-size: 2rem; font-weight: 500;">How It Works</h2>
+            <h2 style="font-size: 1rem; color: rgb(100, 100, 100); font-weight: 400;">Read more on GitHub: <a style="color: rgb(57, 182, 255); font-weight: 400;" target="_blank" href="https://github.com/julian-z/QuickYelp">QuickYelp →</a></h2>
+        </section>
+
+        <div class="features-row" style="margin: 0 0 4vh 0">
+            <section class="feature-card anim-on-scroll" style="padding: 3vh 3vw;">
+                <div class="features">
+                    <img class="powered-by" src="static/images/yelp.png">
+                    <p style="font-size: 1rem; font-weight: 400; color: rgb(60, 60, 60);">
+                        We leverage the Yelp Fusion API to retrieve provided information, such as phone numbers, hours, as well as the reviews of the business.
+                    </p>
+                    <a style="color: rgb(57, 182, 255); padding: 2vh 0 0 0; font-size: 1rem; font-weight: 400; align-self: center;" target="_blank" href="https://fusion.yelp.com/">
+                        Yelp Fusion API →
+                    </a>
+                </div>
+            </section>
+
+            <section class="feature-card anim-on-scroll" style="padding: 3vh 3vw;">
+                <div class="features">
+                    <img class="powered-by" src="static/images/langchain.png">
+                    <p style="font-size: 1rem; font-weight: 400; color: rgb(60, 60, 60);">
+                        Queries are run through LangChain's RetrievalQA chain, searching two FAISS (Facebook AI Similarity Search) indexes created with data from Yelp Fusion.
+                    </p>
+                    <a style="color: rgb(57, 182, 255); padding: 2vh 0 0 0; font-size: 1rem; font-weight: 400; align-self: center;" target="_blank" href="https://www.langchain.com/">
+                        LangChain →
+                    </a>
+                </div>
+            </section>
+
+            <section class="feature-card anim-on-scroll" style="padding: 3vh 3vw;">
+                <div class="features">
+                    <img class="powered-by" src="static/images/openai.png">
+                    <p style="font-size: 1rem; font-weight: 400; color: rgb(60, 60, 60);">
+                        OpenAI's renowned GPT-4 large-language model is utilized to return the most relevant reply possible, given the information found from the indexes.
+                    </p>
+                    <a style="color: rgb(57, 182, 255); padding: 2vh 0 0 0; font-size: 1rem; font-weight: 400; align-self: center;" target="_blank" href="https://openai.com/blog/openai-api">
+                        OpenAI →
+                    </a>
+                </div>
+            </section>
+        </div>
+
+        <section id="demo" style="gap:1vh;">
+            <h2 style="font-size: 2rem; font-weight: 500; color: white;">Demo</h2>
+            <h2 style="font-size: 1rem; color: white; font-weight: 400; padding-bottom: 3vh;">Watch this video of QuickYelp in action!</h2>
+
+            <div class="prices">
+                <div class="rate anim-on-scroll">
+                    <!-- <iframe style="aspect-ratio: 16/9; width: 100%; box-shadow: 0 0 50px rgba(100, 100, 100, 0.5);" src="https://www.youtube.com/embed/RuM0cEnhojY?si=fIdSm1bhs4pRPlmH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe> -->
+                    <video width="100%" height="auto" controls>
+                        <source src="static/images/demo.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                      </video>
+                </div>
+            </div>
+        </section>
+
+        <section id="faq" style="gap:1vh; background: rgb(217,233,255); background: radial-gradient(circle, rgba(217,233,255,1) 0%, rgba(255,255,255,1) 100%);">
+            <!-- <h2 style="font-size: 2rem; font-weight: 500; color: rgb(25, 21, 78);">Frequently Asked Questions</h2> -->
             
-            <!-- <br><p class="chatbot-message" style="width: 100%; max-width: 100%; background-color: rgb(235, 246, 255);">
-                {{ "🚧 Update Log (10/14/2023)" }}<br>
-                <elem style="font-weight: 400;">
-                    {{ "- Migrated to GPT-4 over GPT-3.5 to ensure quicker performance" }}<br>
-                    {{ "- Chatbot now sends 3 replies: based on business information, another based on reviews, then finally merging the two" }}
-                </elem>
-            </p><br> -->
-
-            {% if error_message != "" %}
-                <br><p class="chatbot-message" style="width: 100%; max-width: 100%; background-color: rgb(235, 246, 255);">
-                    {{ '🤖 '+error_message }}
-                </p>
-            {% else %}
-                <br><p class="chatbot-message" style="width: 100%; max-width: 100%; background-color: rgb(235, 246, 255);">
-                    {{ '🤖 Welcome to QuickYelp! Please provide the necessary information about the business of interest.' }}
-                </p>
-            {% endif %}
-            <br>
-
-            <br><p class="chatbot-message" style="width: 100%; max-width: 100%; background-color: rgb(235, 246, 255);">
-                {{ "☝️ No business in mind? Try out this link! "}}
-                <a href="{{ sample_link }}" style="color: rgb(0, 136, 255); font-weight: lighter;" target="_blank" rel="noopener noreferrer">{{sample_link}} </a>
-            </p><br>
-
-            <br>
-            <p class="chatbot-message" style="width: 100%; max-width: 100%; overflow: auto; background-color: rgb(235, 246, 255);">
-                🔍 What is QuickYelp?<br>
-                <em style="font-weight: lighter">
-                    QuickYelp is a dynamic AI chatbot which scans through the reviews of a given Yelp business, then answers questions based on its training data. 
-                    With this program, users are able to save a ton of time from having to manually read through the reviews themselves. 
-                    Thus, our goal is to offer an easy and efficient way to retrieve a quick overview of a restaurant, as well as answer questions to the best of its ability.
-                </em>
-            </p><br><br>
-            
-            <p class="chatbot-message" style="width: 100%; max-width: 100%; overflow: auto; background-color: rgb(235, 246, 255);">
-                🔍 How does it work?<br>
+            <p class="white-flag anim-on-scroll" style="width: 90%;">
+                <strong>How does it work?<br></strong>
                 <em style="font-weight: lighter">
                     The application uses three main technologies: the Yelp Fusion API, the OpenAI API, and the LangChain API. To put it simply, Yelp Fusion is utilized
                     to retrieve data, while LangChain allows us to train OpenAI's GPT-4 language model using the data we have. To read more, you may visit the
                     GitHub repo here: <a href="https://github.com/julian-z/QuickYelp" style="color: rgb(0, 136, 255);" target="_blank" rel="noopener noreferrer">QuickYelp</a>
                 </em>
-            </p><br><br>
+            </p>
             
-            <p class="chatbot-message" style="width: 100%; max-width: 100%; overflow: auto; background-color: rgb(235, 246, 255);">
-                🔍 What can I ask it?<br>
+            <p class="white-flag anim-on-scroll" style="width: 90%;">
+                <strong>What can I ask it?<br></strong>
                 <em style="font-weight: lighter">
                     You can ask it many questions, the chatbot will try to find the answer based on the information found on its respective Yelp page!
                     For example, you may ask "What is the price range?" or "What are the hours?". You can even ask "What are some popular dishes?"
                     and the chatbot will see what dishes are mentioned in the reviews. If the chatbot is ever stumped, it is most likely due to it not being
                     available on the Yelp website.
                 </em>
-            </p><br><br>
+            </p>
 
-            <p class="chatbot-message" style="width: 100%; max-width: 100%; overflow: auto; background-color: rgb(235, 246, 255);">
-                🔍 Is it always correct?<br>
+            <p class="white-flag anim-on-scroll" style="width: 90%;">
+                <strong>Is it always correct?<br></strong>
                 <em style="font-weight: lighter">
                     As a disclaimer, <strong>no</strong>, the chatbot is not always accurate about what it states. The information used to reply to your query
                     is based entirely off of what it finds on Yelp, thus, if a review is inaccurate, it may taint the chatbot's perspective.
                 </em>
-            </p><br><br>
+            </p>
 
-            <p class="chatbot-message" style="width: 100%; max-width: 100%; overflow: auto; background-color: rgb(235, 246, 255);">
-                🔍 Can I save conversations?<br>
+            <p class="white-flag anim-on-scroll" style="width: 90%;">
+                <strong>Can I save conversations?<br></strong>
                 <em style="font-weight: lighter">
                     As of 8/20/2023, the user is not able to save their conversation with the chatbot. The data is stored temporarily and is deleted after 10 minutes
                     to optimize performance for users as well as be mindful of Yelp Fusion's data.
                 </em>
-            </p><br><br>
+            </p>
 
-            <p class="chatbot-message" style="width: 100%; max-width: 100%; overflow: auto; background-color: rgb(235, 246, 255);">
-                🔍 Why is there a 10 minute limit on chats?<br>
+            <p class="white-flag anim-on-scroll" style="width: 90%;">
+                <strong>Why is there a 10 minute limit on chats?<br></strong>
                 <em style="font-weight: lighter">
                     Each chat session takes up around 2 MB of storage due to the intensity of the FAISS indexes used to query the chatbot. In order to provide the most
                     swift user experience possible, we only allow data to be stored for 10 minutes. As mentioned above, this is also due to the data being utilized belonging
                     to Yelp & their Fusion API.
                 </em>
-            </p><br><br>
+            </p>
 
-            <p class="chatbot-message" style="width: 100%; max-width: 100%; overflow: auto; background-color: rgb(235, 246, 255);">
-                🔍 Is this website affiliated with Yelp?<br>
+            <p class="white-flag anim-on-scroll" style="width: 90%;">
+                <strong>Is this website affiliated with Yelp?<br></strong>
                 <em style="font-weight: lighter">
                     No, this website is not endorsed/affiliated with Yelp. The data being extracted is public information retrieved from Yelp Fusion, as mentioned above.
                     This website was developed entirely by Julian Zulfikar as a passion project. If any questions arise, the developer's contact information is at the bottom of the GitHub repo.
                 </em>
             </p>
+        </section>
 
-            <!-- <div class="business-display" style="width: 100%; max-width: 100%;">
-                <div class="business-photo-container">
-                    <img class="review-photo" src=".././static/images/reviews/felisha.png" alt="Picture" />
-                </div>
-                <div class="business-info">
-                    <p class="business-address" style="font-weight: 700;">{{ "Felisha A." }}</p>
-                    <p class="business-address">{{ "\"QuickYelp is very resourceful as it gives me a great summary of any question I have regarding the restaurant!\"" }}</p>
-                </div>
-            </div> -->
-        </div>
     </div>
+
+    <footer id="contact" style="font-size: .75rem; margin-top: 0;">
+        <div class="footer-container">
+            <div class="footer-columns">
+                <div class="footer-column">
+                    <p style="font-weight: 500; margin: 0 0 2vh 0;" >Resources</p>
+                    <a style="font-weight: 400; color: inherit;" href="#FAQ">FAQ</a>
+                    <a style="font-weight: 400; color: inherit;" href="#demo">Video</a>
+                    <a style="font-weight: 400; color: inherit;" href="#mission">About</a>
+                </div>
+                <div class="footer-column">
+                    <p style="font-weight: 500; margin: 0 0 2vh 0;" >Links</p>
+                    <a style="font-weight: 400; color: inherit;" href="https://github.com/julian-z/QuickYelp">GitHub</a>
+                    <a style="font-weight: 400; color: inherit;" href="https://fusion.yelp.com/">Yelp Fusion</a>
+                    <a style="font-weight: 400; color: inherit;" href="https://www.langchain.com/">LangChain</a>
+                    <a style="font-weight: 400; color: inherit;" href="https://openai.com/blog/openai-api">OpenAI</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Handle opacity transition on scroll -->
+    <script>
+        const elementsToAnim = document.querySelectorAll(".anim-on-scroll, .anim-on-scroll-right, .anim-on-scroll-left"); 
+
+        const elementInView = (element) => {
+            const rect = element.getBoundingClientRect();
+            return rect.top < window.innerHeight;
+        }
+
+        const handleScroll = () => {
+            for (let elem of elementsToAnim) {
+                if (elementInView(elem)) {
+                    elem.classList.add('scrolled');
+                }
+                else {
+                    elem.classList.remove('scrolled');
+                }
+            }
+        }
+
+        window.addEventListener('scroll', () => {
+            handleScroll();
+        })
+    </script>
+
+    <!-- Handle header opacity on scroll -->
+    <!-- <script>
+        const header = document.querySelector("header");
+
+        const handleScrollHeader = () => {
+            if (window.pageYOffset > 100) {
+                header.classList.add('scrolled');
+            }
+            else {
+                header.classList.remove('scrolled');
+            }
+        }
+
+        window.addEventListener('scroll', () => {
+            handleScrollHeader();
+        })
+    </script> -->
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            const intro = document.getElementById("intro");
-            intro.classList.add("hidden");
+            const dropdownButton = document.querySelector(".button-container");
+            const dropdownImage = document.querySelector("#dropdown-button-img");
+            const dropdown = document.querySelector(".dropdown-content");
+
+            dropdownButton.addEventListener('click', () => {
+                if (dropdown.classList[dropdown.classList.length-1] === 'showing') {
+                    dropdown.classList.remove('showing');
+                    dropdownImage.innerHTML = '<img src="static/images/dropdown.png" alt="Show Menu">';
+                }
+                else {
+                    dropdown.classList.add('showing');
+                    dropdownImage.innerHTML = '<img src="static/images/close-dropdown.png" alt="Close Menu">';
+                }
+            })
+
+            // const intro = document.getElementById("intro");
+            // intro.classList.add("hidden");
             
             // Information hover
             const infoIcon = document.getElementById("info-icon");
             const infoPopup = document.getElementById("info-popup");
+            const formMsg = document.getElementById("form-msg");
 
             infoIcon.addEventListener("click", function() {
+                formMsg.style.display = "none";
                 infoPopup.style.display = "block";
                 infoPopup.classList.add("animate-fade-in-left");
             });
@@ -157,23 +338,26 @@
                 if (event.target !== infoIcon && event.target !== infoPopup) {
                     infoPopup.classList.remove("animate-fade-in-left");
                     infoPopup.style.display = "none";
+                    formMsg.style.display = "block";
                 }
             });
 
             // Submitting form
-            document.getElementById("popup").style.display = "block";
-            document.querySelector("#popup form").addEventListener("submit", function(event) {
+            // document.getElementById("popup").style.display = "block";
+            document.querySelector("form").addEventListener("submit", function(event) {
                 event.preventDefault();
 
-                const chatbotMessage = document.querySelector(".popup-content .chatbot-message");
-                chatbotMessage.textContent = `📶 Searching on Yelp for this business...`;
+                infoPopup.style.display = "none";
+                formMsg.style.display = "block";
 
-                const startScanButton = document.querySelector('input[type="submit"][value="Start Scan"]');
+                formMsg.textContent = `📶 Searching on Yelp for this business...`;
+
+                const startScanButton = document.querySelector('#start-btn');
                 startScanButton.value = 'Scanning... (Estimated 15 Seconds)'
 
                 const loadingAnimation = document.createElement("span");
                 loadingAnimation.className = "loading-animation";
-                chatbotMessage.appendChild(loadingAnimation);
+                formMsg.appendChild(loadingAnimation);
 
                 // const num_pages = parseInt(document.querySelector("input[name='num_pages']").value);
                 const estimatedTime = 18;
@@ -182,20 +366,20 @@
                     elapsedSeconds++;
                     const percentage = Math.round((elapsedSeconds / estimatedTime) * 100);
                     if (percentage < 100) {
-                        chatbotMessage.innerHTML = `🧠 Give me one moment as I learn about this business... (${percentage}%)`;
+                        formMsg.innerHTML = `🧠 Give me one moment as I learn about this business... (${percentage}%)`;
                     }
                     else if (percentage > 200) {
-                        chatbotMessage.innerHTML = `🧠 Taking longer than expected... please wait or refresh to try again.`;
+                        formMsg.innerHTML = `🧠 Taking longer than expected... please wait or refresh to try again.`;
                     }
                     else {
-                        chatbotMessage.innerHTML = `🧠 Give me one moment as I learn about this business... (100%)`;
+                        formMsg.innerHTML = `🧠 Give me one moment as I learn about this business... (100%)`;
                     }
-                    chatbotMessage.appendChild(loadingAnimation);
+                    formMsg.appendChild(loadingAnimation);
                 }, 1000);
-    
+
                 // Disable submit button
-                const form = document.querySelector("#popup form");
-                const submitButton = form.querySelector("input[type='submit']");
+                const form = document.querySelector("form");
+                const submitButton = form.querySelector("#start-btn");
                 form.setAttribute("disabled", true);
                 submitButton.setAttribute("disabled", true);
 
@@ -203,121 +387,6 @@
             });
         });
     </script>
-
-    <!-- react-chat -->
-    <script type="text/babel">
-        // Inherit React component
-        class ChatApp extends React.Component {
-            constructor(props) {
-                super(props);
-                this.state = {
-                    chatHistory: [],
-                    query: "",
-                    waiting: true,
-                    about: false,
-                    headerHidden: false,
-                };
-                this.chatLogRef = React.createRef();
-            }
-
-
-            // Toggle the About section (TO-DO)
-            toggleAboutSection = () => {
-            };
-
-            // Toggle the Header
-            toggleHeader = () => {
-            };
-
-
-            // Handle asynchronous calls to Flask
-            handleSubmit = async (event) => {
-            };
-
-
-            // Update "query" when user types
-            handleInputChange = (event) => {
-            };
-
-
-            // Submit on "enter" button
-            handleTextareaKeyDown = (event) => {
-            };
-
-
-            // Render to the DOM
-            render() {
-                return (
-                    <div id="chat-container" className={this.state.about ? "small-width" : ""}>
-                        <div className={`header ${this.state.headerHidden ? "hidden" : ""}`}>
-                            <a href="/" className="logo">
-                                <img className="logo" src=".././static/images/quickyelp_logo_black_bordered.png" alt="QuickYelp"/>
-                            </a>
-
-                            <div className="powered-section">
-                                <p className="powered-by">
-                                    Powered By:&nbsp;
-                                    <a href="https://fusion.yelp.com/"><img className="powered-logos" src=".././static/images/yelp.png" alt="Yelp Fusion"/> </a>
-                                    <a href="https://openai.com/blog/openai-api"><img className="powered-logos" src=".././static/images/openai.png" alt="OpenAI"/> </a>
-                                    <a href="https://www.langchain.com/"><img className="powered-logos" src=".././static/images/langchain.png" alt="LangChain "/></a>
-                                </p>
-                                <p className="powered-by">
-                                    GitHub:&nbsp;
-                                    <a href="https://github.com/julian-z/QuickYelp"><img className="powered-logos" src=".././static/images/sm_github.png" alt="Github Repo"/></a>
-                                </p>
-                            </div>
-                        </div>
-
-                        <button id="toggle-header-button" className="toggle" onClick={this.toggleHeader}>
-                            {this.state.headerHidden ? 
-                                <img id="show-image" src=".././static/images/show_header.png" alt="Show"></img> : 
-                                <img id="hide-image" src=".././static/images/hide_header.png" alt="Hide"></img>}
-                        </button>
-
-                        <div id="chat-log-container" ref={this.chatLogRef}>
-                            <div id="chat-log-content">
-                                {this.state.chatHistory.map((entry, index) => (
-                                    <div key={index} className="message-container">
-                                        <div
-                                            className={`${
-                                                entry.startsWith("USR") ? "user-message" : "chatbot-message"
-                                            } ${
-                                                entry.startsWith("USR") ? "animate-fade-in-right" : "animate-fade-in-left"
-                                            }`}
-                                        >
-                                            {entry.startsWith("BOT") && "🤖 "}
-                                            {entry.substring(3) === "LOADING" && "Thinking... "}
-                                            {entry.substring(3) === "LOADING" && (<span className="loading-animation"></span>)}
-                                            {entry.substring(3) !== "LOADING" && entry.substring(3)}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        
-                        <div className="query-bar">
-                            <form id="chat-form" onSubmit={this.handleSubmit}>
-                                <input
-                                    type="text"
-                                    name="query"
-                                    id="query"
-                                    placeholder="What do the positive reviews say?"
-                                    value={this.state.query}
-                                    onChange={this.handleInputChange}
-                                    autocomplete="off"
-                                    required
-                                    disabled={true}
-                                />
-                                <input type="submit" value="Ask" disabled={true}/>
-                            </form>
-                        </div>
-                    </div>
-                );
-            }
-        }
-    
-        // Render the ChatApp component
-        ReactDOM.render(<ChatApp />, document.getElementById("react-chat"));
-    </script>
 </body>
+
 </html>

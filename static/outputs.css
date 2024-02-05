@@ -1,22 +1,23 @@
 body {
   /* background-color: rgba(121, 74, 74, 1); */
-  background-color: rgba(221, 220, 223, 1);
+  /* background-color: rgba(221, 220, 223, 1); */
+  /* background-color: #f5f5f5; */
+  background-color: rgb(240, 240, 240);
 }
 
 .logo {
-  width: auto;
-  height: 50px;
+  height: 3rem;
   margin: 0.5%;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
-  padding: 1rem;
+  padding: 0.25rem;
   /* background-color: rgba(221, 220, 223, 1); */
-  background-color: rgba(224 7 7);
+  background-color: rgb(172, 39, 39);
   color: rgb(0, 0, 0);
-  background: linear-gradient(to top, rgba(160 7 7), rgba(224 7 7));
+  /* background: linear-gradient(to top, rgba(160 7 7), rgba(224 7 7)); */
   box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 10px 0px;
   z-index: 998;
   transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s ease-in-out;
@@ -34,21 +35,26 @@ body {
 
 #toggle-header-button img {
   width: auto;
-  height: 25px;
-  background-color: rgba(221, 220, 223, 1);
+  height: 2rem;
+  background-color: rgb(174, 174, 174);
+  box-shadow: 0 0 5px rgba(100, 100, 100, 0.5);
+  border-radius: 0 0 0 0.4rem;
   padding: 5px 10px;
   cursor: pointer;
   position: relative;
   font-weight: 700;
   z-index: 996;
+  margin-top: -1rem;
 }
 
 #toggle-header-button.toggle {
-  width: 100%;
+  /* width: 100%; */
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 996;
+  z-index: 999;
+  position: fixed;
+  right: 0;
 }
 
 .powered-section {
@@ -95,11 +101,14 @@ body {
 #chat-log-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem;
+  /* padding-bottom: 100vh; */
   margin-bottom: auto;
-  background-color: rgb(255, 255, 255);
+  background-color: rgb(240, 240, 240);
   scrollbar-width: 5px;
   scrollbar-color: #888 #eee;
+  /* margin-bottom: 20vh; */
 }
 
 #chat-log-container::-webkit-scrollbar {
@@ -121,48 +130,77 @@ body {
 } */
 
 #chat-log-content {
-  padding-bottom: 10px;
+  padding-bottom: 50vh;
   display: flex;
   flex-direction: column;
 }
 
-#chat-form-container {
-  padding: 1rem;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: stretch;
-  position: sticky;
-  bottom: 0;
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
 }
 
 .query-bar {
   background-color: rgba(221, 220, 223, 1);
-  /* background: linear-gradient(to bottom, transparent, rgba(121, 74, 74, 1)); */
   box-shadow: 0px 2px 10px 10px rgba(221, 220, 223, 1);
   z-index: 997;
-}
-
-/* form {
+  position: fixed;
+  bottom: 0;
   width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-} */
+}
 
 form {
   display: flex;
   flex-direction: column;
-  /* align-items: center; */
-  justify-content: center;
-  width: 100%;
+  justify-content: stretch;
+  align-items: center;
+  padding-bottom: constant(safe-area-inset-bottom); /* For iOS devices */
+  padding-bottom: env(safe-area-inset-bottom); /* For other devices */
+}
+
+#chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.chat-container-padding {
+  flex: 1;
 }
 
 form label,
 form input {
   margin: 0px 1rem 0px 1rem;
 }
+
+.suggestions {
+  position: relative;
+  /* left: 0;
+  right: 0;
+  bottom: 18vh; */
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  white-space: nowrap;
+  z-index: 1000;
+}
+
+.question {
+  font-size: 0.5rem;
+  padding: 0.5rem;
+  color: white;
+  background-color: rgba(100, 100, 100, 0.5);
+  border-radius: 1rem;
+  box-shadow: 0 0 5px rgba(100,100,100,0.5);
+  border-style: solid;
+  border-width: 0.1rem;
+  text-align: center;
+  margin: 0.25rem;
+  white-space: nowrap;
+}
+
+
 
 /*
 ! tailwindcss v3.3.3 | MIT License | https://tailwindcss.com
@@ -212,7 +250,7 @@ html {
   /* 3 */
   /* font-family: 'Poppins', 'Helvetica Neue', Helvetica, 'Open Sans', Arial, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   letter-spacing: -0.4px; */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   /* 4 */
@@ -232,7 +270,11 @@ body {
   /* 1 */
   line-height: inherit;
   /* 2 */
-  background-color: rgba(221, 220, 223, 1);
+  /* background-color: rgba(221, 220, 223, 1); */
+}
+
+html, body {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /*
@@ -890,6 +932,7 @@ border-radius: 5px;
 
 .business-name {
   font-size: 1.5rem;
+  font-weight: 500;
 }
 
 .business-address {
@@ -910,6 +953,7 @@ border-radius: 5px;
 }
 
 .user-message {
+  word-wrap: break-word;
   display: inline-block;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
@@ -928,15 +972,16 @@ border-radius: 5px;
 }
 
 .chatbot-message {
+  word-wrap: break-word;
   display: inline-block;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   border-radius: 0.375rem;
   --tw-bg-opacity: 1;
-  background-color: rgb(221 220 223 / var(--tw-bg-opacity));
+  background-color: rgb(210 210 210 / var(--tw-bg-opacity));
   /* background: linear-gradient(to bottom, rgb(255, 255, 255), rgb(231, 231, 231)); */
   padding: 1rem;
-  font-weight: 600;
+  font-weight: 500;
   --tw-text-opacity: 1;
   color: rgb(0 0 0 / var(--tw-text-opacity));
   box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 10px 0px;
@@ -986,6 +1031,7 @@ input[type="number"] {
   color: rgb(0 0 0 / var(--tw-text-opacity));
   box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 10px 0px;
   outline: none;
+  width: calc(100vw - 1rem);
 }
 
 input[type="text"]:focus,
@@ -998,12 +1044,13 @@ input[type="submit"] {
   cursor: pointer;
   border-radius: 0.25rem;
   --tw-bg-opacity: 1;
-  background-color: rgb(224 7 7 / var(--tw-bg-opacity));
+  background-color: rgb(221 47 47);
   padding: 1rem;
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
   transition: background-color 0.3s;
-  font-weight: 700;
+  font-weight: 500;
+  width: -webkit-fill-available;
 }
 
 input[type="submit"]:hover {
@@ -1178,7 +1225,7 @@ input[type="submit"] {
 /* MOBILE DEVICES */
 @media (max-width: 768px) {
   .logo {
-    height: 80px;
+    height: 2rem;
   }
 
   .header {
@@ -1186,7 +1233,7 @@ input[type="submit"] {
   }
 
   .powered-by {
-    font-size: 1rem;
+    font-size: 0.5rem;
   }
 
   .popup {
