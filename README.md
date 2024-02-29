@@ -1,5 +1,5 @@
 ![](https://github.com/julian-z/QuickYelp/blob/main/static/images/quickyelp_logo_white_bordered_small.png)
-Developed by Julian Zulfikar, August 2023
+Developed by Julian Zulfikar, August 2023 - Discontinued March 2024 (Per Yelp's Request)
 
 # Purpose 🚀
 QuickYelp is a dynamic AI chatbot which scans through the information and reviews of a given Yelp business, then answers questions based on its training data. With this program, users are able to save a ton of time from having to manually read through the reviews themselves. Thus, our goal is to offer an easy and efficient way to retrieve a quick overview of a restaurant, as well as answer questions to the best of its ability.
@@ -47,4 +47,8 @@ Screenshots as of 8/24/23:
 - chat.html: Chat page, makes asynchronous calls to app.py
 
 # Conclusion 👋
-Open to suggestions! Email me at jzulfika@uci.edu
+As of the beginning of March 2024, the project has come to a close as per Yelp's request. 
+
+I thank you all for making this project worthwhile. At the time of closing, QuickYelp served over 250+ chat sessions and 3,000+ queries.
+
+Here's to bigger projects soon!
